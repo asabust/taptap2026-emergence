@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "id": "level_001",
+  "name": "读写测试关卡",
+  "grid": {
+    "width": 3,
+    "height": 2
+  },
+  "rules": [
+    {
+      "id": "lonelyDeath"
+    },
+    {
+      "id": "crowdedDeath"
+    }
+  ],
+  "iterationLimit": 5,
+  "cloneLimit": 3,
+  "tiles": [
+    {
+      "x": 0,
+      "y": 0,
+      "type": "floor"
+    },
+    {
+      "x": 1,
+      "y": 0,
+      "type": "floor"
+    },
+    {
+      "x": 2,
+      "y": 0,
+      "type": "floor"
+    },
+    {
+      "x": 0,
+      "y": 1,
+      "type": "floor"
+    },
+    {
+      "x": 1,
+      "y": 1,
+      "type": "floor"
+    },
+    {
+      "x": 2,
+      "y": 1,
+      "type": "floor"
+    }
+  ],
+  "cells": [
+    {
+      "x": 0,
+      "y": 0,
+      "type": "player"
+    },
+    {
+      "x": 1,
+      "y": 1,
+      "type": "normal"
+    }
+  ],
+  "winConditions": {
+    "combine": "all",
+    "conditions": [
+      {
+        "type": "actorAtPosition",
+        "position": {
+          "x": 2,
+          "y": 0
+        }
+      }
+    ]
+  }
+}
