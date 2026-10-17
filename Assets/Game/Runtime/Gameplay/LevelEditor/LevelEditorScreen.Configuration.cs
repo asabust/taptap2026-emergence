@@ -19,6 +19,7 @@ namespace Game.Runtime.Gameplay.LevelEditor
         private TextMeshProUGUI goalDetails, fileStatus;
         private GameObject countControls, positionControls, modal;
         private bool pendingSettings, pendingTarget, pendingFile;
+        private bool refreshingFiles;
         private readonly List<string> fileIds = new List<string>();
 
         private void BuildConfigurationUI()
@@ -32,9 +33,9 @@ namespace Game.Runtime.Gameplay.LevelEditor
             Button(root, "另存为", 870, 18, 100, 34, () => SaveDocument(true));
             Button(root, "校验关卡", 980, 18, 110, 34, ValidateDraft);
             Label(root, "已有文件", 336, 62, 75, 30, 16);
-            filesDropdown = Dropdown(root, 416, 60, 320, new[] { "请选择关卡" });
-            Button(root, "刷新列表", 746, 60, 100, 32, RefreshFileList);
-            Button(root, "加载选中", 856, 60, 100, 32, LoadSelected);
+            filesDropdown = Dropdown(root, 416, 60, 320, new[] { "请选择已保存的关卡" });
+            filesDropdown.onValueChanged.AddListener(LoadSelected);
+            Button(root, "刷新列表", 746, 60, 100, 32, () => RefreshFileList());
             fileStatus = Label(root, "", 968, 56, 450, 42, 14);
             idInput.characterLimit = 64; nameInput.characterLimit = 100;
             idInput.onValueChanged.AddListener(_ => { pendingFile = true; RefreshFileStatus(); });
@@ -204,29 +205,56 @@ namespace Game.Runtime.Gameplay.LevelEditor
                 ShowDialog("覆盖已有文件？", "将覆盖 " + id + ".json。请选择确认，或取消后使用新的 ID 另存为。", save);
             else save();
         }
-        private void RefreshFileList()
+        private void RefreshFileList(bool resetSelection = false)
         {
-            Guard(() =>
+            refreshingFiles = true;
+            try
             {
-                fileIds.Clear(); fileIds.AddRange(document.Repository.ListIds());
+                string[] ids;
+                try { ids = document.Repository.ListIds(); }
+                catch (Exception e) when (IsFileError(e))
+                { ids = Array.Empty<string>(); SetStatus("刷新列表失败：" + e.Message, true); }
+                fileIds.Clear(); fileIds.AddRange(ids);
                 filesDropdown.ClearOptions();
-                filesDropdown.AddOptions(new List<string> { "请选择已保存关卡" }.Concat(fileIds).ToList());
-                int selected = fileIds.IndexOf(document.SavedId);
+                filesDropdown.AddOptions(new List<string> { "请选择已保存的关卡" }.Concat(fileIds).ToList());
+                int selected = resetSelection ? -1 : fileIds.IndexOf(document.SavedId);
                 filesDropdown.SetValueWithoutNotify(selected < 0 ? 0 : selected + 1); filesDropdown.RefreshShownValue();
+            }
+            finally { refreshingFiles = false; }
+        }
+        private void LoadSelected(int selection)
+        {
+            if (refreshingFiles || selection <= 0 || selection > fileIds.Count) return;
+            string id = fileIds[selection - 1];
+            // Check stale/deleted/corrupt entries before asking to discard any current edits.
+            try
+            {
+                var candidate = document.Repository.Load(id);
+                new LevelEditorSession().ReplaceDraft(candidate);
+            }
+            catch (Exception e) when (IsFileError(e)) { RecoverFileList(e); return; }
+            filesDropdown.SetValueWithoutNotify(0); filesDropdown.RefreshShownValue();
+            ConfirmDiscard(() =>
+            {
+                try
+                {
+                    // Read again after confirmation: the file may have changed while the dialog was open.
+                    document.Load(id); pendingTarget = false;
+                    ReadAllControls(); Refresh();
+                    int index = fileIds.IndexOf(id);
+                    filesDropdown.SetValueWithoutNotify(index < 0 ? 0 : index + 1); filesDropdown.RefreshShownValue();
+                    SetStatus("已加载：" + document.Repository.PathFor(id));
+                }
+                catch (Exception e) when (IsFileError(e)) { RecoverFileList(e); }
             });
         }
-        private void LoadSelected()
+        private void RecoverFileList(Exception error)
         {
-            if (filesDropdown.value <= 0 || filesDropdown.value > fileIds.Count)
-            { SetStatus("请先在已有文件列表中选择关卡。", true); return; }
-            string id = fileIds[filesDropdown.value - 1];
-            ConfirmDiscard(() => Guard(() =>
-            {
-                document.Load(id); pendingTarget = false;
-                ReadAllControls(); Refresh();
-                SetStatus("已加载：" + document.Repository.PathFor(id));
-            }));
+            RefreshFileList(true);
+            SetStatus("加载失败：" + error.Message + "\n已刷新文件列表，请重新选择；当前草稿保持不变。", true);
         }
+        private static bool IsFileError(Exception e) => e is IOException || e is UnauthorizedAccessException || e is FormatException
+            || e is ArgumentException || e is InvalidOperationException || e is System.Security.SecurityException;
         private void ValidateDraft()
         {
             if (!PrepareSave()) return;
