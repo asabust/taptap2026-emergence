@@ -9,8 +9,8 @@ using UnityEngine.UI;
 
 namespace Game.Runtime.Gameplay.LevelEditor
 {
-    /// <summary>Stage 2 editor shell. Scene bootstrap creates this UI at runtime.</summary>
-    public sealed class LevelEditorScreen : MonoBehaviour
+    /// <summary>Runtime editor shell; persistence and goal configuration are in the partial file.</summary>
+    public sealed partial class LevelEditorScreen : MonoBehaviour
     {
         public TMP_FontAsset uiFont;
         public LevelEditorSession Session { get; private set; }
@@ -27,7 +27,9 @@ namespace Game.Runtime.Gameplay.LevelEditor
         {
             if (!uiFont) uiFont = TMP_Settings.defaultFontAsset;
             Session = new LevelEditorSession();
+            document = new LevelEditorDocument(Session, Levels.LevelRepository.DeveloperDefault());
             Build();
+            BuildConfigurationUI();
             Session.Changed += Refresh;
             board.CellClicked += Paint;
             Refresh();
@@ -36,6 +38,7 @@ namespace Game.Runtime.Gameplay.LevelEditor
         private void OnDestroy()
         {
             if (Session != null) Session.Changed -= Refresh;
+            document?.Dispose();
             if (board) board.CellClicked -= Paint;
             if (canvasObject) Destroy(canvasObject);
             if (ownedEventSystem) Destroy(ownedEventSystem);
@@ -50,8 +53,8 @@ namespace Game.Runtime.Gameplay.LevelEditor
             scaler.referenceResolution = new Vector2(1440, 900); scaler.matchWidthOrHeight = .5f;
             RectTransform root = (RectTransform)canvasObject.transform;
             Fill(root, "Background", new Color(.055f, .08f, .13f));
-            Label(root, "LEVEL EDITOR  /  关卡编辑器", 24, 18, 850, 36, 25);
-            Label(root, "阶段 2 · 基础编辑     左下角 (0,0)  /  X 向右，Y 向上", 24, 60, 1100, 30, 17);
+            Label(root, "关卡编辑器", 24, 18, 286, 36, 25);
+            Label(root, "(0,0) 左下 · X 右 / Y 上", 24, 60, 286, 30, 16);
             RectTransform tools = Box(root, "Tools", 20, 110, 286, 690, Panel);
             Label(tools, "网格尺寸  1 — 30", 16, 14, 250, 28, 19);
             Label(tools, "X", 16, 54, 20, 32, 18);
@@ -61,7 +64,7 @@ namespace Game.Runtime.Gameplay.LevelEditor
             Button(tools, "居中调整尺寸", 16, 100, 254, 36, () => ChangeSize(false));
             Button(tools, "新建空白关卡", 16, 146, 254, 36, () => ChangeSize(true));
             Label(tools, "画笔  /  单击一格", 16, 202, 254, 28, 19);
-            string[] names = { "有效地块", "墙面", "普通细胞 C", "玩家 P", "擦除细胞", "删除地块", "角色终点 G", "细胞目标 T", "擦除目标" };
+            string[] names = { "有效地块", "墙面", "普通细胞 C", "玩家 P", "擦除细胞", "删除地块", "角色终点 G", "细胞目标 T", "擦除全部目标", "擦除本目标" };
             var values = (LevelBrush[])Enum.GetValues(typeof(LevelBrush));
             for (int i = 0; i < values.Length; i++)
             {
@@ -71,11 +74,11 @@ namespace Game.Runtime.Gameplay.LevelEditor
             }
             brushLabel = Label(tools, "", 16, 476, 254, 44, 16);
             Label(tools, "删除地块会清除该格细胞与目标。\n缩小直接裁切，扩大不会恢复。", 16, 530, 254, 66, 15);
-            Label(tools, "保存、规则与额度面板\n将在阶段 3 接入。", 16, 613, 254, 56, 15);
+            Label(tools, "保存支持不完整草稿。\n试玩功能尚未接入。", 16, 613, 254, 56, 15);
             var area = new GameObject("Board Area", typeof(RectTransform));
             var areaRect = (RectTransform)area.transform; areaRect.SetParent(root, false);
             areaRect.anchorMin = Vector2.zero; areaRect.anchorMax = Vector2.one;
-            areaRect.offsetMin = new Vector2(336, 110); areaRect.offsetMax = new Vector2(-26, -114);
+            areaRect.offsetMin = new Vector2(336, 110); areaRect.offsetMax = new Vector2(-376, -114);
             var boardObject = new GameObject("Board", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(AspectRatioFitter), typeof(LevelEditorBoardView));
             var br = (RectTransform)boardObject.transform; br.SetParent(areaRect, false);
             br.anchorMin = Vector2.zero; br.anchorMax = Vector2.one;
@@ -97,13 +100,12 @@ namespace Game.Runtime.Gameplay.LevelEditor
         private void Refresh()
         {
             board.Render(Session, uiFont);
-            widthInput.SetTextWithoutNotify(Session.Draft.grid.width.ToString());
-            heightInput.SetTextWithoutNotify(Session.Draft.grid.height.ToString());
             int normal = Session.Draft.cells.FindAll(c => c.type == LevelIds.Normal).Count;
             bool player = Session.Draft.cells.Exists(c => c.type == LevelIds.Player);
             summary.text = Session.Draft.grid.width + " × " + Session.Draft.grid.height + "   |   普通细胞 " + normal
                 + "   |   玩家 " + (player ? "已放置" : "未放置（草稿）") + "   |   P 玩家 · C 细胞 · G 出口 · T 细胞目标";
             SelectBrush(brush);
+            RefreshConfigurationView();
         }
         private void SelectBrush(LevelBrush selected)
         {
@@ -113,6 +115,7 @@ namespace Game.Runtime.Gameplay.LevelEditor
         }
         private void Paint(int x, int y)
         {
+            if (modal || !ApplyTargetIfNeeded()) return;
             bool ok = Session.TryPaint(x, y, brush, out string message);
             SetStatus(message, !ok);
         }
@@ -121,8 +124,22 @@ namespace Game.Runtime.Gameplay.LevelEditor
             if (!int.TryParse(widthInput.text, out int width) || !int.TryParse(heightInput.text, out int height)
                 || width < 1 || width > 30 || height < 1 || height > 30)
             { SetStatus("X、Y 必须是 1～30 的整数；草稿没有改变。", true); return; }
-            if (create) Session.New(width, height); else Session.Resize(width, height);
-            SetStatus(create ? "新建完成，全部为有效地块。" : "已居中调整尺寸；范围外内容已丢弃，新增区域为空。请检查玩家和目标。");
+            if (create)
+            {
+                ConfirmDiscard(() =>
+                {
+                    document.New(width, height);
+                    ReadAllControls(); Refresh();
+                    SetStatus("新建完成，全部为有效地块。请填写 ID 后保存。");
+                });
+            }
+            else
+            {
+                if (!ApplyTargetIfNeeded()) return;
+                Session.Resize(width, height);
+                widthInput.SetTextWithoutNotify(width.ToString()); heightInput.SetTextWithoutNotify(height.ToString());
+                SetStatus("已居中调整尺寸；范围外内容已丢弃，新增区域为空。请检查玩家和目标。");
+            }
         }
         private void SetStatus(string text, bool error = false) { status.text = text; status.color = error ? new Color(1f, .65f, .49f) : Ink; }
         private TMP_InputField NumberInput(RectTransform parent, float x, float y, string value)

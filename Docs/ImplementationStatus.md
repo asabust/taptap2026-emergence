@@ -1,6 +1,6 @@
 # 实现状态与阶段交接
 
-更新：2026-10-15
+更新：2026-10-16
 
 ## 阶段 1：关卡数据与读写
 
@@ -106,3 +106,36 @@ WebGL／Android 的 StreamingAssets 读取需要后续平台适配；`DeveloperD
 - 自动化连接 Unity 后未显示新菜单，截图不可用，未运行新场景或验证可视点击。不能将独立 C# 编译视为 Unity 内场景验收；下一步按快速说明复查。
 
 操作与手动验收见 [LevelEditorQuickStart.md](/Users/pomelo/UnityProjects/2026taptap/Docs/LevelEditorQuickStart.md)。当前没有保存 UI，退出 Play 会丢失草稿；不要开始正式关卡制作。阶段 3 将接入已有仓库、规则与额度、条件参数面板。
+
+
+## 阶段 3：编辑器配置与文件操作
+
+状态：代码、独立 C# 编译和配置服务检查完成；新版 Unity Play Mode 的界面点击与视觉验收尚未完成。阶段 4 未开始。
+
+### 文件与接口
+
+- `LevelEditorDocument`：衔接 Session 与 Repository，管理 SavedId／IsDirty。Load 成功且草稿可编辑后才替换当前数据；Save／SaveAs 先写文件，成功后更新当前文件身份。提供 New、Load、Save(id,name,saveAs)、Dispose。
+- `LevelRepository.ListIds()`：返回目录内合法 JSON 文件 ID，排序；目录不存在返回空，不为列文件创建目录。
+- `LevelEditorSession`：增加 TryConfigure、SelectedGoalIndex、SelectGoal、AddGoal、RemoveSelectedGoal、TrySetCountGoal、ClearSelectedGoalPositions 与 EraseSelectedGoal 画笔。位置画笔优先写入所选同类型条件，多目标不再都写入第一个列表。New 清空选择，Load 默认选第一个目标。
+- `LevelEditorScreen.Configuration.cs`：partial UI，包含顶部文件栏、右侧可滚动配置区、已有文件列表、目标编辑、校验结果与丢弃／覆盖确认弹窗。共用主 Screen 与场景入口，无需重新创建 Scene。
+- `LevelConfigurationChecks.cs`：Tools → Levels → Run Configuration Checks，预期 34 项通过。
+
+### 已实现行为
+
+- 保存允许不完整草稿，成功显示实际文件路径及校验错误数量。非法 ID、数字、未应用尺寸输入不触发隐式裁切或静默修正。
+- 修改现有关卡 ID 后须另存为；另存为新 ID 不覆盖原关，也拒绝覆盖已存在的目的文件。新草稿首次保存到已存在 ID 时先确认。
+- 新建／加载有未保存数据或未应用输入时弹出确认；失败加载不清空草稿。保存、加载及应用配置后刷新相关显示。
+- 两种死亡规则、分身与迭代上限、严格数量比较、角色终点与多位置覆盖均可编辑；全部目标同时满足，不提供 any。
+- 目标坐标必须点击 floor；删除单个格子、清空本目标坐标、删除整个条件分开处理。
+- 数据校验显示全部错误与警告，初始满足和两规则关闭不会禁止保存。
+- 分身／迭代／撤销玩法未实现，没有试玩按钮；此阶段只负责编辑与持久化。
+
+### 已执行验证
+
+- 47 项读写检查、33 项编辑检查、34 项新增配置检查全部通过。
+- Runtime UI、TMP/Input System 与 Editor 菜单的实际 DLL 独立编译通过，无编译警告。
+- 新增检查覆盖默认值、非法配置不改数据、所选目标隔离、空目标草稿、保存回读、同 ID 覆盖、另存保留原文件、拒绝已有目的文件、改 ID 必须另存、失败读写保留草稿与文件、默认目标选择和源文件列表。
+- 当前已连接的 Unity 正运行旧阶段 2 的 Play Mode，棋盘有用户尚未保存的内容。为避免丢失该内存草稿，未退出 Play 或触发重载；没有把旧界面截图当作新版视觉验证。
+- 用户新增的字体资源、TitleScene 与 LevelEditor 场景改动原样保留；未提交或推送此次代码。
+
+使用与手动验收见 [LevelEditorQuickStart.md](/Users/pomelo/UnityProjects/2026taptap/Docs/LevelEditorQuickStart.md)。确认新版 Play Mode 可保存／重载后，再进入阶段 4 的共用玩法逻辑。

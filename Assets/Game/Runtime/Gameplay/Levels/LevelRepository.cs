@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using Game.Runtime.Core.IO;
 using Game.Runtime.Data.Levels;
@@ -25,6 +26,13 @@ namespace Game.Runtime.Gameplay.Levels
         {
             if (!IsValidId(id)) throw new ArgumentException("Invalid level ID: " + id);
             return Path.Combine(DirectoryPath, id + ".json");
+        }
+        public string[] ListIds()
+        {
+            if (!Directory.Exists(DirectoryPath)) return new string[0];
+            return Directory.GetFiles(DirectoryPath, "*.json")
+                .Select(Path.GetFileNameWithoutExtension).Where(IsValidId)
+                .OrderBy(id => id, StringComparer.Ordinal).ToArray();
         }
         public LevelDefinition Load(string id)
         {

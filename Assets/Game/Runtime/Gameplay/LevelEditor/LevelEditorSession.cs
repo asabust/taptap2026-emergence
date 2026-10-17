@@ -5,13 +5,14 @@ using Game.Runtime.Gameplay.Levels;
 
 namespace Game.Runtime.Gameplay.LevelEditor
 {
-    public enum LevelBrush { Floor, Wall, Normal, Player, EraseCell, EraseTerrain, ActorGoal, CellGoal, EraseGoals }
+    public enum LevelBrush { Floor, Wall, Normal, Player, EraseCell, EraseTerrain, ActorGoal, CellGoal, EraseGoals, EraseSelectedGoal }
 
     /// <summary>Single editor draft owner. No scene objects, input or file I/O.</summary>
     public sealed class LevelEditorSession
     {
         public LevelDefinition Draft { get; private set; }
         public event Action Changed;
+        public int SelectedGoalIndex { get; private set; } = -1;
 
         public LevelEditorSession(int width = 10, int height = 10) { New(width, height); }
 
@@ -27,6 +28,7 @@ namespace Game.Runtime.Gameplay.LevelEditor
             for (int y = 0; y < height; y++) for (int x = 0; x < width; x++)
                 next.tiles.Add(new LevelTile { x = x, y = y, type = LevelIds.Floor });
             Draft = next;
+            SelectedGoalIndex = -1;
             Changed?.Invoke();
         }
 
@@ -36,9 +38,10 @@ namespace Game.Runtime.Gameplay.LevelEditor
             if (definition == null || definition.grid == null) throw new ArgumentException("草稿缺少网格。");
             RequireSize(definition.grid.width, definition.grid.height);
             var copy = LevelJson.DeepCopy(definition);
-            if (copy.tiles == null || copy.cells == null || copy.winConditions == null || copy.winConditions.conditions == null)
+            if (copy.rules == null || copy.tiles == null || copy.cells == null || copy.winConditions == null || copy.winConditions.conditions == null)
                 throw new ArgumentException("草稿缺少必要列表。");
             Draft = copy;
+            SelectedGoalIndex = copy.winConditions.conditions.Count == 0 ? -1 : 0;
             Changed?.Invoke();
         }
 
@@ -88,13 +91,13 @@ namespace Game.Runtime.Gameplay.LevelEditor
                     Draft.cells.RemoveAll(c => c.x == x && c.y == y);
                     break;
                 case LevelBrush.ActorGoal:
-                    // Stage 3 can target a selected goal via the session instead of the first actor goal.
-                    var actor = Draft.winConditions.conditions.Find(g => g.type == LevelIds.ActorAtPosition);
+                    var actor = SelectedOrFirst(LevelIds.ActorAtPosition);
                     if (actor == null) { actor = new LevelGoal { type = LevelIds.ActorAtPosition }; Draft.winConditions.conditions.Add(actor); }
                     actor.position = new GridPosition { x = x, y = y };
+                    SelectedGoalIndex = Draft.winConditions.conditions.IndexOf(actor);
                     break;
                 case LevelBrush.CellGoal:
-                    var cover = Draft.winConditions.conditions.Find(g => g.type == LevelIds.CoverPositions);
+                    var cover = SelectedOrFirst(LevelIds.CoverPositions);
                     if (cover == null)
                     {
                         cover = new LevelGoal { type = LevelIds.CoverPositions, positions = new List<GridPosition>() };
@@ -102,15 +105,91 @@ namespace Game.Runtime.Gameplay.LevelEditor
                     }
                     if (cover.positions == null) cover.positions = new List<GridPosition>();
                     if (!cover.positions.Exists(p => Same(p, x, y))) cover.positions.Add(new GridPosition { x = x, y = y });
+                    SelectedGoalIndex = Draft.winConditions.conditions.IndexOf(cover);
                     break;
                 case LevelBrush.EraseGoals:
                     RemoveGoalsAt(x, y);
+                    break;
+                case LevelBrush.EraseSelectedGoal:
+                    if (SelectedGoalIndex < 0 || SelectedGoalIndex >= Draft.winConditions.conditions.Count)
+                    { message = "请先选择一个目标。"; return false; }
+                    var selectedGoal = Draft.winConditions.conditions[SelectedGoalIndex];
+                    if (Same(selectedGoal.position, x, y)) selectedGoal.position = null;
+                    selectedGoal.positions?.RemoveAll(p => Same(p, x, y));
                     break;
                 default: message = "未知画笔。"; return false;
             }
             message = "已编辑 (" + x + ", " + y + ")";
             Changed?.Invoke();
             return true;
+        }
+
+        public bool TryConfigure(bool lonely, bool crowded, string cloneText, string iterationText, out string message)
+        {
+            int clones = 0, iterations = 1000;
+            if ((!string.IsNullOrWhiteSpace(cloneText) && !int.TryParse(cloneText, out clones)) || clones < 0)
+            { message = "分身上限必须是非负整数，留空为 0。"; return false; }
+            if ((!string.IsNullOrWhiteSpace(iterationText) && !int.TryParse(iterationText, out iterations)) || iterations <= 0)
+            { message = "迭代上限必须是正整数，留空为 1000。"; return false; }
+            Draft.cloneLimit = clones; Draft.iterationLimit = iterations;
+            Draft.rules.Clear();
+            if (lonely) Draft.rules.Add(new LevelRule { id = LevelIds.LonelyDeath });
+            if (crowded) Draft.rules.Add(new LevelRule { id = LevelIds.CrowdedDeath });
+            message = lonely || crowded ? "配置已应用。" : "配置已应用：两种死亡规则均关闭，迭代不会改变细胞。";
+            Changed?.Invoke();
+            return true;
+        }
+        public int AddGoal(string type)
+        {
+            if (type != LevelIds.ActorAtPosition && type != LevelIds.CellCount && type != LevelIds.CoverPositions)
+                throw new ArgumentException("未知目标类型。");
+            var goal = new LevelGoal { type = type };
+            if (type == LevelIds.CoverPositions) goal.positions = new List<GridPosition>();
+            if (type == LevelIds.CellCount) goal.@operator = ">";
+            Draft.winConditions.conditions.Add(goal);
+            SelectedGoalIndex = Draft.winConditions.conditions.Count - 1;
+            Changed?.Invoke();
+            return SelectedGoalIndex;
+        }
+        public void SelectGoal(int index)
+        {
+            if (index < -1 || index >= Draft.winConditions.conditions.Count) throw new ArgumentOutOfRangeException(nameof(index));
+            SelectedGoalIndex = index;
+        }
+        public void RemoveSelectedGoal()
+        {
+            if (SelectedGoalIndex < 0) return;
+            Draft.winConditions.conditions.RemoveAt(SelectedGoalIndex);
+            SelectedGoalIndex = Math.Min(SelectedGoalIndex, Draft.winConditions.conditions.Count - 1);
+            Changed?.Invoke();
+        }
+        public bool TrySetCountGoal(string comparison, string text, out string message)
+        {
+            if (SelectedGoalIndex < 0 || Draft.winConditions.conditions[SelectedGoalIndex].type != LevelIds.CellCount)
+            { message = "请先选择一个数量目标。"; return false; }
+            int value = 0;
+            bool empty = string.IsNullOrWhiteSpace(text);
+            if ((comparison != ">" && comparison != "<") || (!empty && !int.TryParse(text, out value)) || value < 0)
+            { message = "数量阈值必须是非负整数，比较符只能为 > 或 <。"; return false; }
+            var goal = Draft.winConditions.conditions[SelectedGoalIndex];
+            goal.@operator = comparison; goal.value = empty ? (int?)null : value;
+            message = empty ? "阈值未填写，可保存草稿，但不能试玩。" : "数量目标已应用。";
+            Changed?.Invoke();
+            return true;
+        }
+        public void ClearSelectedGoalPositions()
+        {
+            if (SelectedGoalIndex < 0) return;
+            var goal = Draft.winConditions.conditions[SelectedGoalIndex];
+            goal.position = null; goal.positions?.Clear();
+            Changed?.Invoke();
+        }
+        private LevelGoal SelectedOrFirst(string type)
+        {
+            if (SelectedGoalIndex >= 0 && SelectedGoalIndex < Draft.winConditions.conditions.Count
+                && Draft.winConditions.conditions[SelectedGoalIndex].type == type)
+                return Draft.winConditions.conditions[SelectedGoalIndex];
+            return Draft.winConditions.conditions.Find(g => g.type == type);
         }
 
         public void Resize(int width, int height)

@@ -30,6 +30,6 @@ with tempfile.TemporaryDirectory(prefix='level-editor-compile-') as directory:
     sources = list(project.glob('Assets/Game/Runtime/Gameplay/Levels/*.cs')) + list(project.glob('Assets/Game/Runtime/Gameplay/LevelEditor/*.cs'))
     compile_dll('Gameplay.LevelEditor.dll', sources, runtime_refs)
     sources = [project / ('Assets/Game/Editor/' + name + '.cs')
-               for name in ('LevelDataChecks', 'LevelEditorChecks', 'LevelEditorSceneSetup')]
+               for name in ('LevelDataChecks', 'LevelEditorChecks', 'LevelConfigurationChecks', 'LevelEditorSceneSetup')]
     compile_dll('Editor.LevelEditor.dll', sources, runtime_refs + [output / 'Gameplay.LevelEditor.dll'])
-print('PASS: stage 2 runtime UI and scene-builder compilation')
+print('PASS: stage 3 runtime UI and scene-builder compilation')
