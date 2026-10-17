@@ -15,7 +15,7 @@
 | 核心体验 | 待定 |
 | 单局时长与整体流程 | 待定 |
 
-项目中的 Demo 用于原型验证，在确认之前不作为正式玩法规则。
+项目中的 Demo 用于原型验证，在确认之前不作为正式玩法规则。`OrganicGridDemo` 暂时保留用于细胞 Shader 表现效果测试。2026-10-17 用户明确要求正式 Gameplay 恢复该 Demo 的细胞 Shader 表现；规则仍使用本 GDD，无自动繁殖。
 
 ## 2. 核心玩法
 
@@ -25,7 +25,7 @@
 
 | 操作 | 已明确的行为 | 尚待明确 |
 | --- | --- | --- |
-| 四向移动 | 每次方向键按下移动一格，长按不连续移动；不能进入或穿过存活细胞所在格；不记录移动步数 | 同时按多个方向键的优先级 |
+| 四向移动 | 每次方向键按下移动一格，长按不连续移动；不能进入或穿过存活细胞所在格；不记录移动步数 | 阶段 5 实现采用上 → 右 → 下 → 左，单帧只处理一个操作 |
 | 迭代 | 空格推进一轮生命细胞演化；玩家参与邻居计算但不会死亡；只记录迭代轮数 | 规则变体 |
 | 重置 | R 恢复关卡初始布局与玩家初始位置，迭代轮数归零 | 无 |
 | 后退 | Z 可撤销多轮迭代，同时恢复该次迭代前的玩家位置，丢弃此后的移动 | 快照实现与容量见第 2.5 节 |
@@ -220,7 +220,7 @@ Assets/GameData/database.xlsx
 
 ### 5.1 场景与共享数据
 
-关卡编辑器与游戏内容使用两个独立 Scene，建议命名为 `LevelEditor` 和 `Gameplay`。这是运行在 Game 窗口中的编辑器，对应脚本放在 Runtime 下，不放入 Unity 专用的 Editor 目录。
+关卡编辑器与游戏内容使用两个独立 Scene，建议命名为 `LevelEditor` 和 `Gameplay`。所有后续新增 Scene 统一放在 `Assets/Scenes`，编辑场景为 `Assets/Scenes/LevelEditor.unity`。这是运行在 Game 窗口中的编辑器，对应脚本放在 Runtime 下，不放入 Unity 专用的 Editor 目录。
 
 编辑场景负责选择规则、设置网格、摆放和删除对象、配置通关条件、保存和加载关卡。游戏场景读取相同的关卡数据，执行规则并判定通关。关卡数据类型放在 Data，编辑操作与玩法执行分别由各自的 Runtime 模块负责；通用文件读写可以放在 Core。
 
@@ -345,7 +345,7 @@ P：玩家细胞；.：有效网格；#：墙；G：终点
 }
 ```
 
-该例只展示数据格式；实际文件列出所启用的死亡规则。阶段 1 已实现稳定规则 ID `lonelyDeath`（孤独死亡）、`crowdedDeath`（拥挤死亡），条目采用 `{ "id": "lonelyDeath" }`。阈值固定，当前不支持自定义参数；兼容空 `parameters: {}`。空列表表示两种死亡规则均关闭，允许保存及试玩，但提示迭代不会改变细胞。`schemaVersion` 当前为 1；未知版本报错。具体代码入口与验证结果见 [实现状态](/Users/pomelo/UnityProjects/2026taptap/Docs/ImplementationStatus.md)。
+该例只展示数据格式；实际文件列出所启用的死亡规则。阶段 1 已实现稳定规则 ID `lonelyDeath`（孤独死亡）、`crowdedDeath`（拥挤死亡），条目采用 `{ "id": "lonelyDeath" }`。阈值固定，当前不支持自定义参数；兼容空 `parameters: {}`。空列表表示两种死亡规则均关闭，允许保存及试玩，但提示迭代不会改变细胞。`schemaVersion` 当前为 1；未知版本报错。具体代码入口与验证结果见 [实现状态](/Users/aoi/UnityProjects/taptap2026-emergence/Docs/ImplementationStatus.md)。
 
 其他两类目标的建议 JSON 条目如下，分别展示格式，不表示应同时添加到同一关卡：
 
@@ -384,7 +384,7 @@ P：玩家细胞；.：有效网格；#：墙；G：终点
 
 保留 LevelEditor 与 Gameplay 两个 Scene，但 LevelEditor 支持在当前场景内切换「编辑／试玩」模式。两个场景共用同一套棋盘构建、移动、迭代、目标判定与撤销逻辑；各自负责不同的 UI 和流程，不维护两套规则实现。
 
-点击试玩前校验草稿，将当前草稿深拷贝为试玩初始数据，无需先保存 JSON。试玩时禁止编辑画笔操作，开启游戏输入、迭代计数与撤销。R 恢复这次试玩开始时的数据；结束试玩则丢弃游玩状态和历史，恢复原草稿及编辑视图，不把演化结果写回草稿。
+点击试玩前校验草稿，将当前草稿深拷贝为试玩初始数据，无需先保存 JSON。2026-10-17 已接入左下“试玩当前草稿”和 HUD“结束试玩 · 返回编辑”，编辑／试玩保持同一 Scene；实际新版 Play Mode 验收见实现状态。试玩时禁止编辑画笔操作，开启游戏输入、迭代计数与撤销。R 恢复这次试玩开始时的数据；结束试玩则丢弃游玩状态和历史，恢复原草稿及编辑视图，不把演化结果写回草稿。
 
 编辑器内试玩先验证棋盘规则与目标；Gameplay 用于验证正式胜利界面、叙事对话与关卡切换等完整流程。正式流程测试可另外提供进入 Gameplay 的入口。
 
@@ -403,7 +403,7 @@ P：玩家细胞；.：有效网格；#：墙；G：终点
 
 已确定：移除繁殖，仅保留孤独死亡、拥挤死亡两个独立开关；不规则棋盘与内部挖空；数量统计范围；位置与数量目标检查时机；多目标格同时覆盖；一关一个 JSON；Z 恢复迭代前角色位置；撤销历史暂定 100 轮。
 
-实现前审核的四项边界均已确认：所有有效状态改变后检查目标；最后一轮后仍允许移动、分身与回收，超限迭代尝试失败；分身上限未填默认 0；两种死亡规则可同时关闭并显示提示。实现步骤见 [DevelopmentPlan.md](/Users/pomelo/UnityProjects/2026taptap/Docs/DevelopmentPlan.md)。
+实现前审核的四项边界均已确认：所有有效状态改变后检查目标；最后一轮后仍允许移动、分身与回收，超限迭代尝试失败；分身上限未填默认 0；两种死亡规则可同时关闭并显示提示。实现步骤见 [DevelopmentPlan.md](/Users/aoi/UnityProjects/taptap2026-emergence/Docs/DevelopmentPlan.md)。
 
 需要补入实现验收的边界：目标列表为空不得试玩（草稿可保存）；分身和初始普通细胞显示应可区分，回收模式明确高亮可回收对象；同一帧输入只执行一次确定操作；第 0 轮无历史时 Z 不撤销移动／分身／回收；一次 Z 恢复迭代前快照并丢弃该次迭代后全部移动及分身／回收变化；R 清空历史与失败状态。这些边界需要与最终输入、目标检查方案一致。
 
@@ -489,13 +489,13 @@ PC 与 WebGL 优先开发和验证；当前预留触屏输入与布局适配的�
 
 ### 9.2 标题界面
 
-![标题界面美术参考](/Users/pomelo/UnityProjects/2026taptap/Docs/Images/ui-title-reference.jpg)
+![标题界面美术参考](/Users/aoi/UnityProjects/taptap2026-emergence/Docs/Images/ui-title-reference.jpg)
 
 以第一张美术参考图为风格方向，显示游戏标题与入口选项。开始游戏进入人体选关；其他选项名称、设置内容与退出按钮是否提供后续确定，参考图的「选项」文字为占位。
 
 ### 9.3 人体选关与关卡预览
 
-![人体选关与彩色局部放大图参考](/Users/pomelo/UnityProjects/2026taptap/Docs/Images/ui-level-select-reference.jpg)
+![人体选关与彩色局部放大图参考](/Users/aoi/UnityProjects/taptap2026-emergence/Docs/Images/ui-level-select-reference.jpg)
 
 关卡入口是人体图上对应位置的按钮。点击可进入的关卡按钮，弹出彩色局部放大图，带准心，并可附文本描述。第二张图展示选关／局部放大表现方向，人物框与占位文字的具体用途尚未决定。
 
@@ -503,7 +503,7 @@ PC 与 WebGL 优先开发和验证；当前预留触屏输入与布局适配的�
 
 ### 9.4 游戏界面
 
-![游戏界面美术参考](/Users/pomelo/UnityProjects/2026taptap/Docs/Images/ui-gameplay-reference.jpg)
+![游戏界面美术参考](/Users/aoi/UnityProjects/taptap2026-emergence/Docs/Images/ui-gameplay-reference.jpg)
 
 第三张图为游戏界面美术方向；第四张图为功能布局参考。显示棋盘、目标说明、迭代轮数／上限与分身存活数／上限；提供暂停、迭代、撤销、重置、分身、回收操作。规则入口可展示本关生效的死亡规则。具体按钮位置、图标、叙事文本与人物展示方式后续细化，不直接沿用图片中的占位内容。
 
@@ -511,7 +511,7 @@ PC 与 WebGL 优先开发和验证；当前预留触屏输入与布局适配的�
 
 ### 9.5 通关结算（表现待设计）
 
-![游戏 HUD 与胜利弹窗功能布局参考](/Users/pomelo/UnityProjects/2026taptap/Docs/Images/ui-victory-layout-reference.png)
+![游戏 HUD 与胜利弹窗功能布局参考](/Users/aoi/UnityProjects/taptap2026-emergence/Docs/Images/ui-victory-layout-reference.png)
 
 一关通关后显示结算界面，记录完成进度并解锁后续关卡。美术尚在设计，可能复用人体选关界面，标记本关完成、解锁并选中下一关；不据此默认自动进入下一关。
 

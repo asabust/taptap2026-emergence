@@ -1,7 +1,7 @@
 # 开发实现步骤
 
 日期：2026-10-14  
-依据：[GDD](/Users/pomelo/UnityProjects/2026taptap/Docs/GameDesignDocument.md) v0.28。本文拆分工作，不代表代码已实现。
+依据：[GDD](/Users/aoi/UnityProjects/taptap2026-emergence/Docs/GameDesignDocument.md) v0.28。本文拆分工作，不代表代码已实现。
 
 先完成开发者可用的关卡编辑器与共用玩法原型，再接入正式游戏流程。编辑器基础编辑可先交付；试玩需要共用玩法完成后接入。
 
@@ -9,11 +9,13 @@
 
 执行者先读完整 GDD，再读本文件及当前项目中的 AGENTS.md／CLAUDE.md（如果存在）。开发任务必须指明阶段，不默认一次完成全部游戏。已确认的玩法以 GDD 为准；本文件提供工程边界，不添加新的玩法。阶段 7、8 的待定产品选择须在开始对应阶段前确认，不影响阶段 1～6。
 
-工作目录为 Unity 项目 `/Users/pomelo/UnityProjects/2026taptap`。Unity 版本为 2022.3.62f3。开始前检查当前文件与改动，保留用户已有代码、Demo、场景和资源，不使用清空目录或重写整个框架的方式接入。
+工作目录为 Unity 项目 `/Users/aoi/UnityProjects/taptap2026-emergence`。Unity 版本为 2022.3.62f3。开始前检查当前文件与改动，保留用户已有代码、Demo、场景和资源，不使用清空目录或重写整个框架的方式接入。
 
 程序集约束：Data 只放数据类型，不依赖 Core 或 Gameplay；Core 只添加可复用的读写等能力；关卡校验、编辑操作和玩法规则属于 Gameplay。已有 DataLoader 专门加载 database.json，不把单关卡读取混入该流程。使用现有 Newtonsoft.Json，不新增序列化依赖。
 
-建议模块目录：`Runtime/Data/Levels`、`Runtime/Core/IO`、`Runtime/Gameplay/Levels`、`Runtime/Gameplay/LevelEditor`，场景放 `Assets/Game/Scenes`。类名和目录为推荐实施方案，可适当调整，但必须记录最终接口供下一阶段使用。关卡来源使用现有 JSON 示例的 cells 列表，避免另加一份 playerPosition 作为文件中重复真值；运行状态可拆出玩家坐标。
+建议模块目录：`Runtime/Data/Levels`、`Runtime/Core/IO`、`Runtime/Gameplay/Levels`、`Runtime/Gameplay/LevelEditor`，场景统一放 `Assets/Scenes`，之后新增的 Scene 也使用该目录。类名和目录为推荐实施方案，可适当调整，但必须记录最终接口供下一阶段使用。关卡来源使用现有 JSON 示例的 cells 列表，避免另加一份 playerPosition 作为文件中重复真值；运行状态可拆出玩家坐标。
+
+Git 提交约定（用户于 2026-10-17 指定）：每一步执行完成并通过对应验证后，提交一次 Git，说明具体功能与验证结果。美术资源（含对应导入元数据、字体图集及美术场景调整）单独提交，与功能代码／文档分开。仅纳入该步骤相关修改，保留用户其他未提交改动；未要求推送时只做本地提交。
 
 每阶段交付时提供：修改文件、公开接口及依赖、Unity 中如何打开和操作、实际完成的检查、尚未完成的检查，以及下一阶段可直接使用的入口。在 `Docs/ImplementationStatus.md` 记录阶段状态和实际接口；没有执行的 Unity 编译、Play Mode 或浏览器验证，不能报告通过。
 

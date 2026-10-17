@@ -234,7 +234,7 @@ namespace Game.Runtime.Gameplay.LevelEditor
             var result = LevelValidator.ValidateForPlay(candidate);
             string body = "错误 " + result.Errors.Count + " 项；提示 " + result.Warnings.Count + " 项。\n\n";
             body += string.Join("\n", result.Errors.Select(e => "[错误] " + e).Concat(result.Warnings.Select(w => "[提示] " + w)));
-            if (result.CanPlay) body += "\n\n数据校验通过。试玩功能将在后续阶段接入。";
+            if (result.CanPlay) body += "\n\n数据校验通过，可点击左下方“试玩当前草稿”，无需先保存 JSON。";
             ShowDialog("关卡校验", body);
         }
         private void ConfirmDiscard(Action action)

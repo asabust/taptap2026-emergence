@@ -1,5 +1,6 @@
 using System;
 using Game.Runtime.Data.Levels;
+using Game.Runtime.Gameplay.Levels;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -37,6 +38,42 @@ namespace Game.Runtime.Gameplay.LevelEditor
                 if (cellGoal) mark += " T";
                 labels[i].text = mark.Trim();
                 labels[i].color = ground == LevelIds.Floor ? new Color(.07f, .12f, .18f) : Color.white;
+            }
+        }
+
+        public void RenderPlay(LevelDefinition definition, LevelPlaySession session, TMP_FontAsset uiFont)
+        {
+            font = uiFont;
+            if (backgrounds == null || width != definition.grid.width || height != definition.grid.height)
+                Rebuild(definition.grid.width, definition.grid.height);
+            var terrain = new string[width, height];
+            var cells = new LivingCellState[width, height];
+            var goals = new string[width, height];
+            var state = session.State;
+            foreach (var tile in definition.tiles) terrain[tile.x, tile.y] = tile.type;
+            foreach (var cell in state.Cells) cells[cell.X, cell.Y] = cell;
+            foreach (var goal in definition.winConditions.conditions)
+            {
+                if (goal.type == LevelIds.ActorAtPosition) goals[goal.position.x, goal.position.y] += " G";
+                if (goal.type == LevelIds.CoverPositions)
+                    foreach (var pos in goal.positions) goals[pos.x, pos.y] += " T";
+            }
+            for (int y = 0; y < height; y++) for (int x = 0; x < width; x++)
+            {
+                int i = x + y * width;
+                var cell = cells[x, y];
+                bool player = state.PlayerX == x && state.PlayerY == y;
+                Color color = terrain[x, y] == LevelIds.Floor ? new Color(.84f, .88f, .9f)
+                    : terrain[x, y] == LevelIds.Wall ? new Color(.28f, .34f, .4f) : new Color(.1f, .14f, .2f);
+                if (goals[x, y] != null) color = new Color(.65f, .57f, .88f);
+                if (cell != null) color = cell.IsClone ? new Color(.4f, .65f, 1f) : new Color(.29f, .67f, .65f);
+                if (player) color = new Color(1f, .69f, .38f);
+                bool highlight = session.Mode == LevelInteractionMode.PlaceClone && session.CanPlaceCloneAt(x, y)
+                    || session.Mode == LevelInteractionMode.RecycleClone && cell != null && cell.IsClone;
+                if (highlight) color = Color.Lerp(color, new Color(1f, .95f, .15f), .65f);
+                backgrounds[i].color = color;
+                labels[i].text = ((player ? "P" : cell == null ? "" : cell.IsClone ? "D" : "C") + goals[x, y]).Trim();
+                labels[i].color = terrain[x, y] == LevelIds.Floor ? new Color(.07f, .12f, .18f) : Color.white;
             }
         }
 

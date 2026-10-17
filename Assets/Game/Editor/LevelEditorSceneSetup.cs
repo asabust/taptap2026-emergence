@@ -9,7 +9,7 @@ namespace Game.Editor
 {
     public static class LevelEditorSceneSetup
     {
-        public const string ScenePath = "Assets/Game/Scenes/LevelEditor.unity";
+        public const string ScenePath = "Assets/Scenes/LevelEditor.unity";
 
         [MenuItem("Tools/Levels/Create Level Editor Scene")]
         public static void CreateScene()
@@ -33,12 +33,12 @@ namespace Game.Editor
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = new Color(.055f, .08f, .13f);
             camera.orthographic = true;
-            Directory.CreateDirectory("Assets/Game/Scenes");
+            Directory.CreateDirectory("Assets/Scenes");
             AssetDatabase.Refresh();
             if (!EditorSceneManager.SaveScene(scene, ScenePath))
             { Debug.LogError("场景保存失败，未保存的场景仍保留，请手动保存。"); return; }
             Selection.activeGameObject = root;
-            Debug.Log("LevelEditor 场景已创建：" + ScenePath + "。点击 Play 开始编辑；界面会在运行时构建。本阶段尚未接入保存和试玩。");
+            Debug.Log("LevelEditor 场景已创建：" + ScenePath + "。点击 Play 开始编辑；界面会在运行时构建。已支持配置、保存 JSON 和左下方“试玩当前草稿”，编辑与试玩保持同一场景。");
         }
     }
 }

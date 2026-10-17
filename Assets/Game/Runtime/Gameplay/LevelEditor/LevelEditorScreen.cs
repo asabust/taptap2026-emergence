@@ -37,6 +37,7 @@ namespace Game.Runtime.Gameplay.LevelEditor
         }
         private void OnDestroy()
         {
+            EndPlaytest();
             if (Session != null) Session.Changed -= Refresh;
             document?.Dispose();
             if (board) board.CellClicked -= Paint;
@@ -74,7 +75,7 @@ namespace Game.Runtime.Gameplay.LevelEditor
             }
             brushLabel = Label(tools, "", 16, 476, 254, 44, 16);
             Label(tools, "删除地块会清除该格细胞与目标。\n缩小直接裁切，扩大不会恢复。", 16, 530, 254, 66, 15);
-            Label(tools, "保存支持不完整草稿。\n试玩功能尚未接入。", 16, 613, 254, 56, 15);
+            Button(tools, "试玩当前草稿", 16, 610, 254, 40, BeginPlaytest);
             var area = new GameObject("Board Area", typeof(RectTransform));
             var areaRect = (RectTransform)area.transform; areaRect.SetParent(root, false);
             areaRect.anchorMin = Vector2.zero; areaRect.anchorMax = Vector2.one;
@@ -115,7 +116,7 @@ namespace Game.Runtime.Gameplay.LevelEditor
         }
         private void Paint(int x, int y)
         {
-            if (modal || !ApplyTargetIfNeeded()) return;
+            if (modal || playtestObject || !ApplyTargetIfNeeded()) return;
             bool ok = Session.TryPaint(x, y, brush, out string message);
             SetStatus(message, !ok);
         }

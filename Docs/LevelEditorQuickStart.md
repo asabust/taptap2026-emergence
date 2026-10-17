@@ -1,11 +1,13 @@
-# 关卡编辑器：阶段 3 使用说明
+# 关卡编辑器：配置与同场景试玩
+
+2026-10-17：用户已确认 JSON 保存可用，`002.json` 为用户新建的关卡；加载重开及其他手动验收仍按文末清单确认。所有新增 Scene 统一使用 `Assets/Scenes`。
 
 ## 启动
 
 1. 打开 Unity 2022.3.62f3 项目，等待脚本导入编译。没有新菜单时执行 Assets → Refresh，检查 Console 是否有编译错误。
 2. 执行 **Tools → Levels → Run Editor Checks**。预期 Console 输出 `Level editor checks passed: 33`。
 3. 执行 **Tools → Levels → Create Level Editor Scene**。若当前场景有未保存改动，按 Unity 提示保存；取消则不创建新场景。
-4. 新场景保存为 `Assets/Game/Scenes/LevelEditor.unity`，随后点击 Play。棋盘、工具栏及 EventSystem 在运行时构建，非 Play 状态仅有引导组件与背景相机。
+4. 新场景保存为 `Assets/Scenes/LevelEditor.unity`，随后点击 Play。棋盘、工具栏及 EventSystem 在运行时构建，非 Play 状态仅有引导组件与背景相机。
 5. 场景已存在时无需重建，打开已有 Scene，退出旧 Play 后重新点击 Play 即可加载新版界面。旧版本运行中的内存草稿不会自动迁移，不要把退出 Play 当作保存。
 
 ## 操作
@@ -29,7 +31,7 @@
 5. 已保存关卡列表选择文件后点 **加载选中**。外部新放入的 JSON 可用刷新列表更新；加载失败会保留当前草稿。
 6. 保存允许缺少玩家、未完成目标等不完整草稿，但不能使用非法 ID 或未应用的非法数字。网格尺寸改变要先点居中调整，保存不会偷偷裁切。
 
-退出 Play 后只会丢失未保存的编辑；已经写入磁盘的 JSON 可以下次加载。现阶段仍无游玩／迭代功能，保存关卡并不代表已经可执行玩法。
+退出 Play 后只会丢失未保存的编辑；已经写入磁盘的 JSON 可以下次加载。现可直接点击左下“试玩当前草稿”，无需先保存或切换 Scene；结束试玩返回原编辑数据。参见 [玩法测试说明](/Users/aoi/UnityProjects/taptap2026-emergence/Docs/LevelPlayQuickStart.md)。
 
 ## 规则、额度与通关目标
 
@@ -60,4 +62,13 @@
 
 配置服务检查菜单：**Tools → Levels → Run Configuration Checks**，预期输出 `Level configuration checks passed: 34`。
 
-独立编译与逻辑验证：`bash Docs/Tests/run-level-data-checks.sh`（47 项数据检查、33 项编辑检查、34 项配置检查）；`python3 Docs/Tests/check-level-editor-compilation.py`（UI 与场景工具实际程序集编译，不替代 Play Mode 验收）。
+独立编译与逻辑验证：`bash Docs/Tests/run-level-data-checks.sh`（47 项数据检查、33 项编辑检查、34 项配置检查、63 项玩法检查、44 项历史／输入检查、15 项试玩／关卡检查）；`python3 Docs/Tests/check-level-editor-compilation.py`（UI 与场景工具实际程序集编译，不替代 Play Mode 验收）。
+
+
+## 同场景试玩（阶段 6）
+
+- 在当前 LevelEditor 场景 Play，设置玩家、完整目标和合法参数，然后点击左下 **试玩当前草稿**。可以从文件列表加载 `stage6_probe` 作为验证关。
+- 试玩会先应用规则／数量输入，尺寸输入需先明确应用；无需保存 JSON。非法草稿继续留在编辑界面并列出错误。
+- 编辑面板隐藏，原草稿、画笔、目标选择和滚动位置保留。试玩以独立副本运行，方向键／Space／Z／R 与按钮共用原玩法。
+- 点击 HUD 的 **结束试玩 · 返回编辑**，可以从选择、暂停或胜败状态返回；试玩对象、状态和历史丢弃，不覆盖草稿或正式进度。
+- 试玩和 Gameplay 共用 Organic 细胞视图，编辑态仍为清晰的方格／字母标记。Shader 与动画的实际视觉验收待执行。

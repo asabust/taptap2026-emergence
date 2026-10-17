@@ -1,10 +1,16 @@
 # 实现状态与阶段交接
 
-更新：2026-10-16
+更新：2026-10-17
+
+## 当前总览
+
+阶段 1 已通过；阶段 2、3 已实现，用户于 2026-10-17 确认测试过 JSON 保存，`Assets/StreamingAssets/Levels/002.json` 为用户新建关卡。该确认不扩大为重载、全部交互或视觉验收均通过。阶段 4 共用玩法、阶段 5 撤销／重置／输入／HUD 的代码和独立检查已完成；用户已确认阶段 5 可玩，菜单与手动清单未逐项确认；阶段 6 同场景试玩及有机细胞渲染已实现，15 项新增检查通过；新版 Play Mode 与 Shader 编译／视觉验收待确认。
+
+项目本地根目录为 `/Users/aoi/UnityProjects/taptap2026-emergence`。所有后续新增 Scene 统一放在 `Assets/Scenes`，编辑场景为 `Assets/Scenes/LevelEditor.unity`。`OrganicGridDemo` 保留用于细胞 Shader 表现试验，不作为正式玩法规则。以下阶段 1～3 的验证历史按发生时记录，最新结论以本总览和各阶段补充为准。
 
 ## 阶段 1：关卡数据与读写
 
-状态：阶段 1 已通过。用户于 2026-10-15 在 Unity 中执行菜单，确认输出 `Level data checks passed: 47`。阶段 2 代码与逻辑检查完成，Play Mode 验证待执行。
+状态：阶段 1 已通过。用户于 2026-10-15 在 Unity 中执行菜单，确认输出 `Level data checks passed: 47`。后续阶段进度见当前总览。
 
 ### 文件与职责
 
@@ -81,7 +87,7 @@ WebGL／Android 的 StreamingAssets 读取需要后续平台适配；`DeveloperD
 
 ## 阶段 2：棋盘显示与基础编辑
 
-状态：代码、独立编译与逻辑检查完成；Unity Play Mode 视觉与点击验证尚未完成。阶段 3 未开始。
+状态：代码、独立编译与逻辑检查完成；完整 Unity Play Mode 视觉与点击验收尚未记录；阶段 3 已实现，见下文。
 
 ### 新增模块与接口
 
@@ -90,7 +96,7 @@ WebGL／Android 的 StreamingAssets 读取需要后续平台适配；`DeveloperD
 - `LevelEditorSession.TryPickNormalized`：左下为零，右／上边界排除，映射到整数格；BoardView 先用 RectTransformUtility 从指针屏幕坐标转换到棋盘局部坐标。
 - `LevelEditorBoardView.cs`：UI 方格临时配色和 P/C/G/T 标记；只有整张棋盘接收指针，子格和文字不消耗 raycast。宽高比固定为网格列／行比例，FitInParent 保持方格比例。
 - `LevelEditorScreen.cs`：运行时 Canvas、画笔、尺寸、新建、提示；使用项目中文 TMP 字体与 InputSystemUIInputModule，输入框和按钮不会穿透到棋盘。
-- `Editor/LevelEditorSceneSetup.cs`：Tools → Levels → Create Level Editor Scene，目标 `Assets/Game/Scenes/LevelEditor.unity`；由用户执行创建，不手写场景 YAML，不覆盖已有场景，脏场景先走 Unity 保存提示。
+- `Editor/LevelEditorSceneSetup.cs`：Tools → Levels → Create Level Editor Scene，目标 `Assets/Scenes/LevelEditor.unity`；由用户执行创建，不手写场景 YAML，不覆盖已有场景，脏场景先走 Unity 保存提示。
 - `Editor/LevelEditorChecks.cs`：Tools → Levels → Run Editor Checks。
 
 新建默认 10×10 全地面，两个死亡规则默认打开，分身额度 0；仍是草稿，不自动放玩家或通关目标。目标画笔是基础拾取入口：角色目标写入首个角色位置条件，细胞目标写入首个覆盖列表；多条件选择和字段面板由阶段 3 接入。
@@ -105,12 +111,12 @@ WebGL／Android 的 StreamingAssets 读取需要后续平台适配；`DeveloperD
 - 中文字体字符表已检查，当前界面源码中的汉字均存在于所选字体图集中。
 - 自动化连接 Unity 后未显示新菜单，截图不可用，未运行新场景或验证可视点击。不能将独立 C# 编译视为 Unity 内场景验收；下一步按快速说明复查。
 
-操作与手动验收见 [LevelEditorQuickStart.md](/Users/pomelo/UnityProjects/2026taptap/Docs/LevelEditorQuickStart.md)。当前没有保存 UI，退出 Play 会丢失草稿；不要开始正式关卡制作。阶段 3 将接入已有仓库、规则与额度、条件参数面板。
+操作与手动验收见 [LevelEditorQuickStart.md](/Users/aoi/UnityProjects/taptap2026-emergence/Docs/LevelEditorQuickStart.md)。阶段 2 当时没有保存 UI；现已由阶段 3 接入保存、仓库、规则与额度、条件参数面板。退出 Play 仍会丢失未保存草稿，正式谜题需待玩法验证。
 
 
 ## 阶段 3：编辑器配置与文件操作
 
-状态：代码、独立 C# 编译和配置服务检查完成；新版 Unity Play Mode 的界面点击与视觉验收尚未完成。阶段 4 未开始。
+状态：代码、独立 C# 编译和配置服务检查完成。2026-10-17 用户确认已测试保存 JSON，并新建 `002.json`；重载及其余新版界面点击与视觉验收未逐项确认。阶段 4 已实现，见下文。
 
 ### 文件与接口
 
@@ -128,14 +134,155 @@ WebGL／Android 的 StreamingAssets 读取需要后续平台适配；`DeveloperD
 - 两种死亡规则、分身与迭代上限、严格数量比较、角色终点与多位置覆盖均可编辑；全部目标同时满足，不提供 any。
 - 目标坐标必须点击 floor；删除单个格子、清空本目标坐标、删除整个条件分开处理。
 - 数据校验显示全部错误与警告，初始满足和两规则关闭不会禁止保存。
-- 分身／迭代／撤销玩法未实现，没有试玩按钮；此阶段只负责编辑与持久化。
+- 此阶段只负责编辑与持久化，没有试玩按钮。分身／迭代逻辑已在阶段 4 新增，现由阶段 5 接入独立 Gameplay HUD；编辑器内试玩仍留给阶段 6。
 
 ### 已执行验证
 
 - 47 项读写检查、33 项编辑检查、34 项新增配置检查全部通过。
 - Runtime UI、TMP/Input System 与 Editor 菜单的实际 DLL 独立编译通过，无编译警告。
 - 新增检查覆盖默认值、非法配置不改数据、所选目标隔离、空目标草稿、保存回读、同 ID 覆盖、另存保留原文件、拒绝已有目的文件、改 ID 必须另存、失败读写保留草稿与文件、默认目标选择和源文件列表。
-- 当前已连接的 Unity 正运行旧阶段 2 的 Play Mode，棋盘有用户尚未保存的内容。为避免丢失该内存草稿，未退出 Play 或触发重载；没有把旧界面截图当作新版视觉验证。
+- 2026-10-16 交付时连接的 Unity 正运行旧阶段 2 的 Play Mode，棋盘有用户尚未保存的内容。为避免丢失该内存草稿，未退出 Play 或触发重载；没有把旧界面截图当作新版视觉验证。
 - 用户新增的字体资源、TitleScene 与 LevelEditor 场景改动原样保留；未提交或推送此次代码。
 
-使用与手动验收见 [LevelEditorQuickStart.md](/Users/pomelo/UnityProjects/2026taptap/Docs/LevelEditorQuickStart.md)。确认新版 Play Mode 可保存／重载后，再进入阶段 4 的共用玩法逻辑。
+使用与手动验收见 [LevelEditorQuickStart.md](/Users/aoi/UnityProjects/taptap2026-emergence/Docs/LevelEditorQuickStart.md)。用户已确认保存可用并授权进入阶段 4；重新加载及其他手动验收仍以该说明中的清单补验。
+
+
+## 阶段 4：共用玩法逻辑
+
+状态：2026-10-17 代码、独立 C# 编译和 63 项玩法检查完成；未在 Unity 内执行新增菜单，未进行 Play Mode、场景或 WebGL 验证。阶段 5 已实现，见下文。
+
+### 文件、接口与依赖
+
+- `Assets/Game/Runtime/Gameplay/Levels/LevelPlaySession.cs`：无 Unity 场景依赖的共用规则会话，命名空间 `Game.Runtime.Gameplay.Levels`。依赖已有 LevelDefinition、LevelValidator、LevelJson、LevelState，不修改 Data/Core 分层。
+- `LevelPlayStatus`：Playing／Won／Failed；`LevelInteractionMode`：Move／PlaceClone／RecycleClone。
+- `new LevelPlaySession(definition)`：校验后深拷贝关卡；非法或空目标草稿抛出 ArgumentException；构造时检查初始目标，可能直接 Won。
+- 操作入口：`TryMove(dx,dy,out message)`、`TryBeginClonePlacement(out message)`、`TryCreateClone(x,y,out message)`、`TryBeginRecycling(out message)`、`TryRecycleClone(x,y,out message)`、`TryIterate(out message)`，返回成功与英文原因／结果文本。HUD 中文呈现留给阶段 5。
+- `CancelSelection()`：取消分身／回收选择；`CanPlaceCloneAt(x,y)`：给后续高亮提供合法性查询，不要求先进入模式。
+- `State`、`Definition` 每次返回深拷贝，外部不可直接修改会话真值；只需计数时用 `LivingCloneCount`、`Iteration`、`CloneLimit`、`IterationLimit`，避免重复复制。
+- `Assets/Game/Editor/LevelPlayChecks.cs`：菜单 **Tools → Levels → Run Play Checks**，预期 `Level play checks passed: 63`；两个新 C# 文件均附 `.meta`。
+- `Docs/Tests/run-level-data-checks.sh` 与 `check-level-editor-compilation.py` 已接入新会话与检查。
+
+### 已实现行为
+
+- 移动只接受四向一格；墙、无地块、边界、存活细胞均阻挡；不留下普通细胞，不增加迭代轮数。
+- 每轮从完整旧状态统计八邻居，再一起删除死亡细胞；两个死亡开关独立生效，无自动繁殖。玩家计入邻居且永不因死亡规则消失；边界不循环。
+- 分身需要先进入放置模式，玩家八邻域合法空地可放置。禁用、满额、没有合法邻格分别拒绝；非法选择保留模式，合法创建一个后回到 Move。
+- 回收需要先进入回收模式，允许全棋盘选择存活分身，拒绝初始普通细胞。回收与死亡即时释放并发名额，存活分身保留来源标记。
+- 放置和回收模式期间拒绝移动与迭代；CancelSelection 回到 Move，不修改棋盘。
+- 构造及每次有效移动／创建／回收／迭代后检查当前全部目标，不累计历史达成标记。数量与覆盖包含分身、排除玩家；数量仅严格 >／<。
+- 到达迭代上限仍 Playing，允许移动／分身／回收并通关；再次尝试迭代才 Failed，不改变布局、轮数或额度。Won／Failed 后所有棋盘操作拒绝，不直接打开 UI。
+- 本阶段未接入键盘、按钮、棋盘渲染、撤销、重置或试玩；没有新增 Scene，没有更改 Shader Demo 或用户的 `002.json`。
+
+### 实际执行的验证
+
+- `bash Docs/Tests/run-level-data-checks.sh`：47 项数据、33 项编辑、34 项配置、63 项玩法检查全部通过，共 177 项。
+- `python3 Docs/Tests/check-level-editor-compilation.py`：使用本机 Unity 2022.3.62f3 实际 DLL 编译相关 Data、Core 读写、Runtime 编辑器／玩法及 Editor 菜单／场景工具通过。
+- 玩法检查包含旧状态同步死亡、玩家补足第二／第四邻居、规则独立关闭、无繁殖、不循环、非法动作不改变棋盘、模式锁定、分身来源／名额、全局回收、三类目标和严格比较、同一状态全部成立、初始通关、最后一轮胜利及超限失败、会话与草稿／返回副本隔离。
+- 上述独立检查不代表 Unity 对整个项目编译或 Play Mode 验收；本次没有操作运行中的 Unity，也未覆盖用户未保存的内存草稿。
+
+### Unity 中如何使用与下一阶段入口
+
+本阶段没有可玩的场景 UI。在 Unity 等待编译后执行 **Tools → Levels → Run Play Checks** 即可复核规则；详细代码用法和手动确认项见 [LevelPlayQuickStart.md](/Users/aoi/UnityProjects/taptap2026-emergence/Docs/LevelPlayQuickStart.md)。
+
+阶段 5 应继续使用同一个 LevelPlaySession，在会话内集中协调快照、撤销、重置与初始副本，新增受控恢复入口；不要让 UI 修改 State 副本。只为成功迭代保存迭代前快照，最近 100 份；失败超限、移动、分身、回收均不新增记录。Z 恢复来源、玩家、轮数并丢弃此后的变化；R 从初始关卡恢复并清空历史。恢复后清除选择模式、重新检查目标，清除失败状态。
+
+阶段 5 再接入 Input System 单帧单次确定操作和 HUD：分身／回收的开始点击与棋盘选格必须分开处理；暂停、弹窗等进入时 CancelSelection 并阻断输入。新增 Scene 一律放 `Assets/Scenes`。阶段 6 才接编辑器内试玩和正式首个测试谜题，不将 002 自动认定为已验证的谜题。
+
+
+## 阶段 5：撤销、重置与试玩 HUD
+
+状态：2026-10-17 代码、44 项新增历史／输入检查及相关模块独立编译完成。用户已确认阶段 5 可以玩。现已进入阶段 6（见下文），新版同场景试玩和 Shader 的视觉验收尚未完成。
+
+### 文件、公开接口与依赖
+
+- `Runtime/Gameplay/Levels/LevelPlaySession.cs`：新增 `HistoryCapacity = 100`、`HistoryCount`、`CanUndo`、`TryUndo(out message)`、`Reset()`。独立初始状态、实时状态与历史均深拷贝隔离；每次成功迭代才保留其前快照。达到容量移除最早项。
+- `Runtime/Gameplay/Levels/LevelPlayController.cs`：无 Unity 依赖的输入仲裁。`LevelPlayRequest` 含 Command／X／Y；`ProcessFrame(frame, requests, out message)` 每帧最多处理一个请求，包括失败请求，不会继续执行第二个。Session 和 Paused 为只读对外入口。
+- `Runtime/Gameplay/LevelPlay/LevelPlayScreen.cs`：Input System 键盘、按钮、模式、计数、目标、暂停／胜利／失败覆盖层及中文结果提示。`levelId` 默认 002，`uiFont` 指定字体，`loadOnStart` 默认 true。`Initialize(LevelDefinition)` 先创建合法新会话再替换，可供阶段 6 使用未保存的深拷贝；失败不会替换原会话。
+- `Runtime/Gameplay/LevelPlay/LevelPlayButton.cs`：忽略 UI Submit，避免空格重复触发上次聚焦按钮；空间键只走共用输入入口。
+- `Runtime/Gameplay/LevelEditor/LevelEditorBoardView.cs`：新增 `RenderPlay(definition, session, font)`，复用棋盘构建、比例适配与坐标拾取。P 玩家、C 初始普通细胞、D 分身，放置／回收合法位置高亮，G／T 保留目标标记。未改变原有编辑 Render 路径。
+- `Editor/LevelPlaySceneSetup.cs`：菜单 **Tools → Levels → Create Gameplay Scene**，生成 `Assets/Scenes/Gameplay.unity`；已有同名场景拒绝覆盖，脏场景先提示保存，Play 中拒绝生成。优先使用现有动态中文 TMP 字体，不修改用户字体资源。由用户执行菜单，不手写 YAML。
+- `Editor/LevelHistoryChecks.cs`：菜单 **Tools → Levels → Run History Checks**，预期 `Level history checks passed: 44`。
+- 两个独立验证脚本均接入新代码，全部新增脚本和目录附 `.meta`。未修改 Data／Core 程序集、002.json、Shader Demo、TitleScene 或用户资源。
+
+### 已实现行为与输入合同
+
+- Z 恢复迭代前的完整棋盘、玩家、来源与轮数，同时丢弃该轮后的移动、分身和回收；不提供重做。无历史时拒绝且不改变状态。
+- R 恢复独立初始状态、清空历史与失败、返回 Move。撤销／重置后重新检查当前目标；初始已满足目标时 Reset 仍为 Won。
+- 超限失败不添加历史，Won／Failed 可以通过 Z／R 恢复；恢复成功后 HUD 隐藏对应覆盖层。无历史时撤销按钮禁用，Z 可给出历史起点提示。
+- 键盘只读 wasPressedThisFrame，长按不连发。UI 和键盘请求在 LateUpdate 汇总，每帧按固定优先级：Reset → Undo → Cancel → Pause → Clone → Recycle → Iterate → 上 → 右 → 下 → 左 → Select。同优先级保留首个请求，其余丢弃；最高优先级操作失败也不继续执行后续请求。
+- 分身／回收选择中只接受选格、取消或暂停；R／Z 与其他玩法按钮须先取消选择。开始模式与选格同帧时只开始模式，不创建／回收。非法位置保留模式；成功一次后返回 Move。
+- Esc 在选择中取消，在移动中暂停，在暂停中继续。暂停会取消未完成选择；暂停期间只接受取消／继续，不执行 R／Z 或棋盘操作。胜利／失败时只接收 Z／R。
+- 按钮显示目标、轮数、分身数、历史数；禁用、满额、无合法邻格、无分身等使用明确中文反馈。右侧 HUD 可滚动；棋盘保持等比例，覆盖层拦截结算／暂停时棋盘点击。
+- Screen 失焦或禁用清空请求并取消选择；销毁时解除棋盘事件并清理自建 Canvas／EventSystem。不会修改已有 EventSystem 或正式进度，不保存游玩状态到 JSON。
+
+### 实际完成验证
+
+- `bash Docs/Tests/run-level-data-checks.sh`：47 数据 + 33 编辑 + 34 配置 + 63 玩法 + 44 历史／输入 = **221 项通过**。
+- `python3 Docs/Tests/check-level-editor-compilation.py`：本机 Unity 2022.3.62f3 实际 DLL 独立编译相关规则、编辑器 UI、试玩 HUD、Input System、TMP、Editor 检查和两个场景构建工具通过。
+- 新检查覆盖第 0 轮不撤销、非法操作不留历史、A／B 分身与玩家回退、来源恢复、死亡分身恢复、连续多轮与分支、初始副本隔离、101 轮容量边界和玩家位置、超限失败后 Z／R、胜利后撤销、初始胜利重置、输入优先级、同帧重复派发、失败请求不穿透、模式点击分离、选择／暂停锁定与恢复。
+- 没有在 Unity 内执行菜单、生成场景或进行 Play Mode；不将独立编译和纯逻辑检查记作视觉验收。桌面文件仓库仍不适用于 WebGL 直接读取，此阶段不做平台适配。
+
+### Unity 操作与下一阶段交接
+
+见 [LevelPlayQuickStart.md](/Users/aoi/UnityProjects/taptap2026-emergence/Docs/LevelPlayQuickStart.md)：先执行 History Checks，再执行 Create Gameplay Scene，默认读取用户的 002；其 cloneLimit=0，分身测试须另存一张有分身额度的草稿，勿覆盖原关。
+
+阶段 6 使用同一个 LevelPlayScreen／LevelPlaySession，设置 loadOnStart=false，通过 Initialize 传入校验后的草稿副本。编辑草稿、试玩初始数据、运行状态和历史保持隔离；关闭试玩销毁其 Screen／生成对象，恢复原编辑草稿及视图，不能从磁盘重载替代。需要额外协调编辑界面的键盘焦点／EventSystem、绘制锁定、重复进出清理；本阶段未新增编辑器试玩按钮，也未制作带通关操作序列的正式测试谜题。
+
+
+## 阶段 6：同场景编辑／试玩与 Organic 细胞表现
+
+状态：2026-10-17 用户确认阶段 5 可玩，并明确要求编辑与试玩在同一个场景，正式 Gameplay 复原 OrganicGridDemo 的 Shader 表现。代码和 15 项新增逻辑检查完成，相关 C# 独立编译通过；未执行新版 Unity Play Mode 或 Shader 编译菜单，不能视作视觉验收通过。原 Demo 文件保持不动。
+
+### 文件与公开入口
+
+- `Runtime/Gameplay/LevelEditor/LevelEditorScreen.Playtest.cs`：新增 partial。左侧“试玩当前草稿”校验并复制当前内存数据，不保存 JSON、不加载或切换 Scene。规则／数量输入采用已有应用逻辑；未应用尺寸须先明确调整。缺少玩家、目标、合法 ID 等继续编辑并显示原因。
+- 试玩期间停用编辑 Canvas，保留编辑会话、画笔、目标选择、输入和滚动位置；新建子对象上的 LevelPlayScreen，设置 loadOnStart=false、showReturnToEditor=true，再 Initialize(candidate)。共用已有 EventSystem，清除输入框焦点。
+- LevelPlayScreen 新增 `showReturnToEditor` 与 `ExitRequested`。HUD 的“结束试玩 · 返回编辑”在移动、选择、暂停、胜利和失败时都可使用；立即停用输入和试玩对象，再延迟销毁，恢复编辑 Canvas。不从磁盘重载、不将运行状态写回草稿，不更改 SavedId／正式进度。
+- `Runtime/Gameplay/LevelPlay/OrganicLevelBoardView.cs`：共用棋盘渲染与坐标拾取。LevelEditor 内试玩、独立 Gameplay 均使用它；编辑态仍保留易辨识的方格画笔显示。
+- `Assets/Resources/LevelPlay/OrganicLevelBoard.shader`：从原 Demo 的 smooth-min 融合、淡色半透明膜观感、粉白边缘、光晕和深色细胞核做一般化适配。不依赖 Demo 的规则脚本，不引入自动繁殖。
+- 用两张线性 Point／Clamp RGBA32 状态纹理传入地形、目标、来源、存活和高亮；片元采样附近 5×5 格，替代固定 7×7／49 项数组，支持 1～30 尺寸及不规则地形，不按全棋盘逐细胞遍历每个像素。
+- 玩家粉色，普通细胞浅蓝，分身深蓝；金环为角色目标、紫环为覆盖目标、黄框为合法选择。移动过渡 0.2 秒并保留收缩尾部，细胞变化 0.55 秒；新分身膜从旧邻居平均位置长出，核稍后出现，死亡核与膜一起收缩。
+- 动画期间屏蔽普通移动、迭代和选择，仍允许取消、暂停、撤销、重置及返回编辑。暂停冻结表现，撤销／重置直接显示恢复后的准确状态；胜败覆盖层等待动画结束。第一帧进入试玩不会处理同帧遗留按键。
+- `Editor/LevelPlaytestChecks.cs`：**Tools → Levels → Run Playtest Checks**（预期 15 项）；另有 **Tools → Levels → Check Organic Shader**，在实际 Unity 图形环境检查 Shader 支持、首个 Pass 和编译错误。
+- 新增 `Assets/StreamingAssets/Levels/stage6_probe.json`，不修改用户 002。可在编辑器中加载后直接试玩；操作序列见下方表及快速说明。所有新资产附 `.meta`。
+
+### 测试关卡与可复现操作序列
+
+4×2，不规则地形；玩家 `(0,1)`，初始普通细胞 `(0,0)`、`(2,1)`；上排贯通，下排仅 `(0,0)`、`(1,0)` 有地面。两死亡规则开启，分身额度 1、迭代上限 2。要求玩家到达 `(3,1)` 且普通生命细胞覆盖 `(1,0)`。
+
+| 操作后 | 迭代轮数 | 存活分身 | 关键状态 |
+| --- | --- | --- | --- |
+| 初始 | 0 | 0 | `(2,1)` 存活细胞阻挡通道，覆盖目标为空 |
+| 分身按钮 → 点 `(1,0)` | 0 | 1 | 玩家保持 `(0,1)`；初始普通细胞仍有两个 |
+| Space 迭代 | 1 | 1 | `(0,0)` 及分身 `(1,0)` 保留，`(2,1)` 因孤独死亡；共 2 个非玩家细胞 |
+| 右 → 右 → 右 | 1 | 1 | 玩家到 `(3,1)`，分身仍覆盖 `(1,0)`，全部目标同时满足 |
+| Z（可选验收） | 0 | 1 | 恢复迭代前玩家 `(0,1)`、两个初始普通细胞和分身 |
+| R（可选验收） | 0 | 0 | 恢复本次试玩起点，普通细胞两个，历史清空 |
+
+站在 `(1,1)` 再迭代会使 `(2,1)` 因玩家和分身提供两个邻居而保留，验证站位会影响通道。未迭代不能穿过存活阻挡；没有分身不能满足覆盖目标。该关验证最小操作循环，不代表正式关卡质量或批量内容完成。
+
+### 实际验证与未完成项
+
+- `bash Docs/Tests/run-level-data-checks.sh`：47 数据 + 33 编辑 + 34 配置 + 63 玩法 + 44 历史／输入 + 15 试玩／关卡 = **236 项通过**。
+- `python3 Docs/Tests/check-level-editor-compilation.py`：相关模块包含新的 partial、Organic 渲染脚本、HUD 和 Shader 菜单工具，使用实际 Unity DLL 独立 C# 编译通过。它不编译 GPU Shader。
+- 新检查使用提交的 JSON，验证可通关操作序列、错误站位、迭代前阻挡、Z／R、运行与原始草稿／候选／文件身份隔离、反复创建会话及非法草稿不破坏编辑数据。
+- 静态字体字符表检查：新增试玩与 HUD 界面的汉字均存在于现有静态中文字体中；未修改字体资产。
+- UI 连接 Unity 超时，未直接操作其运行状态、菜单或当前场景；未执行 Shader 编译检查、截图或 Play Mode。需按快速说明核对膜融合／拖尾／收缩、首次进入、反复进出与对象／回调清理、30×30 性能和坐标。未进行 PC/WebGL 构建与平台验证。
+
+### 后续交接
+
+先在既有 LevelEditor 场景 Play，加载 stage6_probe 或编辑未保存草稿，点击“试玩当前草稿”，完成后“结束试玩 · 返回编辑”，确认草稿和场景均保持。已有 Gameplay 场景无需重建，运行时自动使用同一 Organic 视图。入口与手动清单见 [LevelPlayQuickStart.md](/Users/aoi/UnityProjects/taptap2026-emergence/Docs/LevelPlayQuickStart.md)。
+
+阶段 7 的标题／人体选关／结算／存档尚未接入，产品选项仍需按 DevelopmentPlan 在该阶段前定案。当前 Organic 为 Demo 表现的一般化实现，GPU 实际编译和与原 Demo 的视觉对照须在 Unity 确认后再标记通过。
+
+
+### 阶段 6 补充：B（Birth）分身快捷键
+
+2026-10-17：按用户要求新增 B 键，使用 Input System 的 bKey.wasPressedThisFrame，将 Clone 请求交给原 LevelPlayController，与分身按钮共用入口、限制与同帧优先级。按一次进入分身放置模式，点击合法空格创建一个；长按不连发。编辑器内试玩和 Gameplay 均生效，选择／暂停／胜败及输入框焦点限制沿用既有逻辑。HUD 按钮与操作说明已同步更新。
+
+
+### Git 交接约定
+
+2026-10-17 用户要求每一步完成后进行 Git 提交。后续按步骤验证并提交，提交范围限于对应功能与文档，不混入用户其他在途修改。本次将此前已完成的阶段 4～6、场景目录／本地路径修正和 B 快捷键统一补交，不能追溯声称它们曾逐步提交。B 快捷键相关 C# 独立编译已通过。
+
+2026-10-17 补充：用户要求美术资源单独提交。本次功能提交包含共用玩法、同场景试玩、Organic 渲染代码／Shader、测试和交接文档，以及生成的 Gameplay 测试场景；UI 图片、字体图集及标题界面美术调整另作一次提交。其余无关在途改动保留。

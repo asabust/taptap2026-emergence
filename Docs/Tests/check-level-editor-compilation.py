@@ -27,9 +27,9 @@ with tempfile.TemporaryDirectory(prefix='level-editor-compile-') as directory:
     compile_dll('Game.Runtime.Data.dll', project.glob('Assets/Game/Runtime/Data/Levels/*.cs'), [])
     compile_dll('Core.LevelIO.dll', [project / 'Assets/Game/Runtime/Core/IO/AtomicTextFile.cs'], [])
     runtime_refs = references + [output / 'Game.Runtime.Data.dll', output / 'Core.LevelIO.dll']
-    sources = list(project.glob('Assets/Game/Runtime/Gameplay/Levels/*.cs')) + list(project.glob('Assets/Game/Runtime/Gameplay/LevelEditor/*.cs'))
+    sources = list(project.glob('Assets/Game/Runtime/Gameplay/Levels/*.cs')) + list(project.glob('Assets/Game/Runtime/Gameplay/LevelEditor/*.cs')) + list(project.glob('Assets/Game/Runtime/Gameplay/LevelPlay/*.cs'))
     compile_dll('Gameplay.LevelEditor.dll', sources, runtime_refs)
     sources = [project / ('Assets/Game/Editor/' + name + '.cs')
-               for name in ('LevelDataChecks', 'LevelEditorChecks', 'LevelConfigurationChecks', 'LevelEditorSceneSetup')]
+               for name in ('LevelDataChecks', 'LevelEditorChecks', 'LevelConfigurationChecks', 'LevelPlayChecks', 'LevelHistoryChecks', 'LevelPlaytestChecks', 'LevelEditorSceneSetup', 'LevelPlaySceneSetup')]
     compile_dll('Editor.LevelEditor.dll', sources, runtime_refs + [output / 'Gameplay.LevelEditor.dll'])
-print('PASS: stage 3 runtime UI and scene-builder compilation')
+print('PASS: stage 6 editor playtest, organic renderer, HUD and checks compilation')
