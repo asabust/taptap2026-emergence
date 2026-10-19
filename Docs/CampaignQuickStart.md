@@ -51,3 +51,15 @@ python3 Docs/Tests/check-level-editor-compilation.py
 Unity 菜单 **Tools → Levels → Run Campaign Checks** 可复核进度逻辑。在 Persistent 启动 Play 后执行 **Run Campaign Integration Checks (Play Mode)**，会自动经过选关、加载 stage6_probe、执行通关操作、返回选关，并验证下一关解锁／高亮和存档重新读取；会保留现有完成进度并记录 probe 已完成。要求目录前两项包含 probe 及后续关，不用于正式玩家运行。
 
 已实际验证与待验证范围见 ImplementationStatus.md。独立构建、WebGL 浏览器、正式局部彩图和开场对话不包含在本阶段 Play Mode 验证中。
+
+## 正式关卡界面（2026-10-19 更新）
+
+Gameplay 使用浅色细胞纸张背景，棋盘为蓝灰到淡紫渐变的圆角菱形地块，边缘轻微流动，并带整体软阴影。按实际地形范围取景，外围空格不占展示面积；图形形变不改变格子、坐标或规则。影子周边留白不接受选格。
+
+左上 stop 图标打开暂停；右下最大的美术按钮为演化（Space），双细胞图标为分身（B），上方菱形箭头为撤销（Z），小感叹号打开可滚动的本关规则说明。回收为分身附近的次级文字入口；重试和返回选关在暂停／失败面板中。规则说明打开时冻结棋盘表现、拦截键盘和棋盘输入，Esc 或关闭按钮返回。
+
+编辑器画笔与编辑器内试玩仍保留制作关卡使用的清晰诊断界面；使用相同玩法会话。正式界面的棋盘样式仅属于展示层。
+
+美术引用集中在 `Assets/Resources/LevelPlay/Presentation.asset`；Unity 菜单 **Tools → Levels → Configure Game Presentation** 可在首次接入时创建，已有配置不覆盖。背景与按钮直接引用既有 Arts/UI 资源，没有把示例棋盘整张图片当作关卡地形。
+
+**Capture Game Preview (Play Mode)** 可导出当前实际 Game 画面到系统临时目录的 `taptap-gameplay-preview.png`。字体动态字符表的变化单独作为美术提交。

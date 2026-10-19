@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7bb74f195c62541e49ed801f4ea9144c, type: 3}
+  m_Name: Presentation
+  m_EditorClassIdentifier: 
+  background: {fileID: 2800000, guid: 923e766d0382f43c990ac2d9218ba8de, type: 3}
+  evolution: {fileID: 2800000, guid: fe9b30470b9b84070b7407604992306d, type: 3}
+  undo: {fileID: 2800000, guid: 373f176fe2bd44daa96e5cb9ac8a7b00, type: 3}
+  pause: {fileID: 2800000, guid: 0abceab4995264987bf50ff17ba7e76a, type: 3}
+  rules: {fileID: 2800000, guid: 71e8c97f11c1c41cbb1b1dad14aa1a1a, type: 3}

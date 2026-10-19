@@ -333,3 +333,28 @@ WebGL／Android 的 StreamingAssets 读取需要后续平台适配；`DeveloperD
 ### 验证限制与下一步
 
 独立 Mac／Windows／WebGL 构建尚未执行；WebGL 已新增请求读取分支，但浏览器请求、存档持久化和平台 Shader 仍待实包验证。末关 UI 代码边界通过纯逻辑检查，未实际逐关通关全部示例关卡。正式局部彩图、完整 HUD 美术、剧情对话、音效内容仍未完成。操作与配置说明见 Docs/CampaignQuickStart.md。
+
+## 正式 Gameplay 美术界面与流动地块（2026-10-19）
+
+用户要求按提供的浅色 UI 参考图替换正式游戏的测试 HUD：地块有独立形状、轻微边缘流动、渐变填充和棋盘整体阴影；右下演化为最大按钮，另有分身、撤销和感叹号规则说明。
+
+### 修改与入口
+
+- 新增 Data/Presentation/LevelPlayArt 和 Resources/LevelPlay/Presentation.asset，引用现有背景、演化、撤销、stop 与规则 PNG；未改原图。
+- LevelPlayScreen 改为 partial，新 Presentation 文件构建正式 Gameplay 界面：左上暂停、顶部关卡进度标记与轮数／额度、左下名称／目标、右下美术操作区。分身使用程序绘制的双细胞标记；保留次级回收入口，重置／返回置于暂停和失败覆盖层。
+- 感叹号打开可滚动规则说明，显示当前关死亡规则、玩法说明和完整目标；取消未完成选格，拦截键盘／棋盘输入，冻结表现，Esc 或关闭恢复。
+- OrganicLevelBoardView 的 styledTerrain 和 Shader 展示分支：圆角菱形距离场、蓝灰／淡紫渐变、统一形状阴影、约百分之一格幅度的慢速边缘扰动，细胞使用柔和蓝紫／粉白填充。空洞和棋盘外透明，不绘制矩形背景。地块流动在暂停／规则面板期间冻结。
+- LevelBoardFrame 只负责实际地形包围盒与阴影留白的展示坐标映射；原关卡整数坐标不变。取景和选格共用一份 frame，避免裁切或加阴影后点击偏移。
+- 独立 Gameplay 与正式流程使用新界面；showReturnToEditor 的编辑器内试玩保留原诊断 HUD 和棋盘样式。规则会话、撤销策略和进度隔离未更改。
+- 新增 Configure Game Presentation、Capture Game Preview (Play Mode) 菜单；所有新增资源均带 meta。未新增或手写 Scene。
+
+### 已执行验证
+
+- 既有 265 项与新增 12 项取景／选格检查合计 **277 项通过**，包含偏移地形、墙体边界、全格中心映射、阴影留白、30×30 角落、单格、非法指针与原始关卡不变。
+- 实际 Unity DLL 的相关 Editor／Player 两分支 C# 编译通过；Unity 中实际编译、运行新界面。
+- 本机 Metal 的 Check Organic Shader 检查通过；新版 Shader 实际显示渐变、软阴影、透明空洞及柔化细胞。
+- 实际点击 002 的大型演化图标，轮数从 0 到 1；点击撤销恢复 0；stop 打开暂停，点击重新开始能退出暂停并重置。
+- 实际打开感叹号规则面板，Space 不推进演化，Esc 返回。新版地图取景之后，在 stage6_probe 点击双细胞分身图标，再点击紫色目标格，分身从 0/1 变为 1/1、目标覆盖从 0/1 变为 1/1，确认画面与逻辑映射一致。
+- Unity 中重新运行 Campaign Integration Checks，实际正式加载、通关回选关、下一关解锁／高亮及存档回读输出 PASS。
+
+待验证：Windows／WebGL 实包 Shader、不同窗口比例与 30×30 GPU 性能。本次只确认当前本机 Game 视图，正式美术效果仍可按用户反馈调整。

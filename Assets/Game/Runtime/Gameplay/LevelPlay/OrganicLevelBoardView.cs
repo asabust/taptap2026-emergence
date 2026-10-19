@@ -13,6 +13,8 @@ namespace Game.Runtime.Gameplay.LevelPlay
     public sealed class OrganicLevelBoardView : MonoBehaviour, IPointerClickHandler
     {
         [Range(.02f,.5f)] public float fusion = .3f;
+        public bool styledTerrain;
+        public const float TerrainPadding = .7f;
         public event Action<int,int> CellClicked;
         public event Action AnimationCompleted;
         public bool Paused { get; set; }
@@ -23,6 +25,8 @@ namespace Game.Runtime.Gameplay.LevelPlay
         private LevelState previous;
         private int width, height;
         private float elapsed, duration;
+        private float flowTime;
+        private LevelBoardFrame frame;
         private Vector2 playerFrom, playerTo;
 
         public void Render(LevelDefinition definition, LevelPlaySession session, bool animate)
@@ -33,6 +37,9 @@ namespace Game.Runtime.Gameplay.LevelPlay
                 Rebuild(definition.grid.width, definition.grid.height);
                 previous = null;
             }
+            frame = LevelBoardFrame.FromDefinition(definition, styledTerrain, styledTerrain ? TerrainPadding : 0);
+            material.SetVector("_ViewBounds", new Vector4(frame.OriginX, frame.OriginY, frame.Width, frame.Height));
+            GetComponent<AspectRatioFitter>().aspectRatio = frame.DisplayWidth / frame.DisplayHeight;
             bool changed = previous == null || !SameState(previous,state);
             if (changed)
             {
@@ -72,7 +79,9 @@ namespace Game.Runtime.Gameplay.LevelPlay
 
         private void Update()
         {
-            if (!material || !IsAnimating || Paused) return;
+            if (!material || Paused) return;
+            if (styledTerrain) { flowTime += Time.unscaledDeltaTime; material.SetFloat("_FlowTime", flowTime); }
+            if (!IsAnimating) return;
             elapsed = Mathf.Min(duration,elapsed+Time.unscaledDeltaTime);
             Upload();
             if (!IsAnimating) AnimationCompleted?.Invoke();
@@ -96,8 +105,10 @@ namespace Game.Runtime.Gameplay.LevelPlay
             lifePixels = new Color[w*h]; boardPixels = new Color[w*h];
             material.SetTexture("_LifeTex",lifeTexture); material.SetTexture("_BoardTex",boardTexture);
             material.SetVector("_GridSize",new Vector4(w,h,0,0));
+            material.SetFloat("_StyledTerrain", styledTerrain ? 1 : 0);
+            material.SetFloat("_BoardPadding", styledTerrain ? TerrainPadding : 0);
             GetComponent<RawImage>().material=material;
-            GetComponent<AspectRatioFitter>().aspectRatio=(float)w/h;
+            GetComponent<AspectRatioFitter>().aspectRatio=styledTerrain ? (w + 2 * TerrainPadding) / (h + 2 * TerrainPadding) : (float)w/h;
         }
         private static Texture2D Texture(int w,int h)
         { return new Texture2D(w,h,TextureFormat.RGBA32,false,true) { filterMode=FilterMode.Point,wrapMode=TextureWrapMode.Clamp }; }
@@ -115,7 +126,8 @@ namespace Game.Runtime.Gameplay.LevelPlay
             if(!RectTransformUtility.ScreenPointToLocalPointInRectangle(rect,data.position,data.pressEventCamera,out var point)) return;
             var bounds=rect.rect;
             if(bounds.width<=0 || bounds.height<=0) return;
-            if(LevelEditorSession.TryPickNormalized((point.x-bounds.xMin)/bounds.width,(point.y-bounds.yMin)/bounds.height,width,height,out int x,out int y))
+            float nx = (point.x-bounds.xMin)/bounds.width, ny = (point.y-bounds.yMin)/bounds.height;
+            if(frame.TryPick(nx,ny,out int x,out int y))
                 CellClicked?.Invoke(x,y);
         }
         private void OnDestroy() { Release(); }

@@ -15,7 +15,7 @@ using UnityEngine.UI;
 namespace Game.Runtime.Gameplay.LevelPlay
 {
     /// <summary>Shared organic play HUD for Gameplay and same-scene editor playtesting.</summary>
-    public sealed class LevelPlayScreen : MonoBehaviour
+    public sealed partial class LevelPlayScreen : MonoBehaviour
     {
         public string levelId = "002";
         public TMP_FontAsset uiFont;
@@ -63,12 +63,18 @@ namespace Game.Runtime.Gameplay.LevelPlay
             victoryReported = false;
             requests.Clear();
             initializedFrame = Time.frameCount;
-            if (status) status.text = "方向键移动 · 空格迭代 · B 分身（Birth） · Z 撤销 · R 重置 · Esc 取消选择／暂停";
+            if (status) status.text = GamePresentation ? "" : "方向键移动 · 空格迭代 · B 分身（Birth） · Z 撤销 · R 重置 · Esc 取消选择／暂停";
             if (board) Refresh(false);
         }
 
         private void LateUpdate()
         {
+            if (rulesOpen)
+            {
+                requests.Clear();
+                if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame) CloseRules();
+                return;
+            }
             if (Session == null || renderFailed || Time.frameCount <= initializedFrame) { requests.Clear(); return; }
             var keyboard = Keyboard.current;
             // Focused text fields keep their own keyboard input in a future embedded HUD.
@@ -144,6 +150,7 @@ namespace Game.Runtime.Gameplay.LevelPlay
 
         private void Build()
         {
+            if (GamePresentation) { BuildGamePresentation(); return; }
             canvasObject = new GameObject("Play Canvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
             canvasObject.transform.SetParent(transform, false);
             var canvas = canvasObject.GetComponent<Canvas>(); canvas.renderMode = RenderMode.ScreenSpaceOverlay; canvas.sortingOrder = 30;
@@ -220,7 +227,7 @@ namespace Game.Runtime.Gameplay.LevelPlay
             bool loaded = Session != null;
             bool playing = loaded && Session.Status == LevelPlayStatus.Playing;
             bool paused = loaded && controller.Paused;
-            if (formalGame)
+            if (formalGame || GamePresentation)
             {
                 bool failed = loaded && Session.Status == LevelPlayStatus.Failed;
                 overlayContinue.gameObject.SetActive(paused || failed);
@@ -233,7 +240,7 @@ namespace Game.Runtime.Gameplay.LevelPlay
             }
             if (loaded)
             {
-                try { board.Render(definition, Session, animate); board.Paused = paused; }
+                try { board.Render(definition, Session, animate); board.Paused = paused || rulesOpen; }
                 catch (Exception e) when (e is InvalidOperationException || e is UnityException)
                 {
                     renderFailed = true;
@@ -247,11 +254,17 @@ namespace Game.Runtime.Gameplay.LevelPlay
             bool moving = playing && !paused && !board.IsAnimating && Session.Mode == LevelInteractionMode.Move;
             iterate.interactable = clone.interactable = recycle.interactable = moving;
             undo.interactable = loaded && !paused && Session.Mode == LevelInteractionMode.Move && Session.CanUndo;
-            reset.interactable = loaded && !paused && Session.Mode == LevelInteractionMode.Move;
+            reset.interactable = loaded && (!paused || GamePresentation) && Session.Mode == LevelInteractionMode.Move;
             cancel.interactable = playing && !paused && Session.Mode != LevelInteractionMode.Move;
             pause.interactable = playing;
             overlay.SetActive(!loaded || paused || !playing && !board.IsAnimating);
             if (!loaded) { overlayText.text = "未加载可试玩的关卡\n请检查底部提示"; return; }
+            if (GamePresentation)
+            {
+                RefreshGamePresentation(paused);
+                if (EventSystem.current) EventSystem.current.SetSelectedGameObject(null);
+                return;
+            }
             title.text = (formalGame ? "" : "玩法测试 · ") + definition.id + " · " + definition.name;
             counters.text = "迭代  " + Session.Iteration + " / " + Session.IterationLimit + "\n分身  " + Session.LivingCloneCount + " / " + Session.CloneLimit
                 + "\n可撤销  " + Session.HistoryCount + " / " + LevelPlaySession.HistoryCapacity;

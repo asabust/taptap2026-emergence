@@ -36,6 +36,6 @@ with tempfile.TemporaryDirectory(prefix='level-editor-compile-') as directory:
     compile_dll('Gameplay.LevelEditor.dll', sources, runtime_refs)
     compile_dll('Gameplay.Player.dll', sources, [r for r in runtime_refs if r.name != 'UnityEditor.dll'], editor=False)
     sources = [project / ('Assets/Game/Editor/' + name + '.cs')
-               for name in ('LevelDataChecks', 'LevelEditorChecks', 'LevelConfigurationChecks', 'LevelPlayChecks', 'LevelHistoryChecks', 'LevelPlaytestChecks', 'LevelEditorSceneSetup', 'LevelPlaySceneSetup', 'CampaignSceneSetup', 'CampaignChecks', 'CampaignIntegrationChecks')]
+               for name in ('LevelDataChecks', 'LevelEditorChecks', 'LevelConfigurationChecks', 'LevelPlayChecks', 'LevelHistoryChecks', 'LevelPlaytestChecks', 'LevelEditorSceneSetup', 'LevelPlaySceneSetup', 'CampaignSceneSetup', 'CampaignChecks', 'CampaignIntegrationChecks', 'LevelPlayPresentationSetup', 'BoardPresentationChecks')]
     compile_dll('Editor.LevelEditor.dll', sources, runtime_refs + [output / 'Gameplay.LevelEditor.dll'])
 print('PASS: editor, shared play, campaign flow and scene tools compilation')
