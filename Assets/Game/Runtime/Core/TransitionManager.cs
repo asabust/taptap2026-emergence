@@ -47,22 +47,29 @@ namespace Game.Runtime.Core
         {
             Debug.Log($"开始切换场景 {fromSceneName} -> {toSceneName}");
             IsTrasition =  true;
-            yield return Fade(1);
-            if (!string.IsNullOrEmpty(fromSceneName))
+            try
             {
-                EventHandler.CallBeforeSceneUnloadEvent(fromSceneName);
-                yield return SceneManager.UnloadSceneAsync(fromSceneName);
+                yield return Fade(1);
+                if (!string.IsNullOrEmpty(fromSceneName))
+                {
+                    EventHandler.CallBeforeSceneUnloadEvent(fromSceneName);
+                    yield return SceneManager.UnloadSceneAsync(fromSceneName);
+                }
+
+                yield return SceneManager.LoadSceneAsync(toSceneName, LoadSceneMode.Additive);
+
+                currentSceneName = toSceneName;
+                Scene newScene = SceneManager.GetSceneByName(toSceneName);
+                SceneManager.SetActiveScene(newScene);
+
+                EventHandler.CallAfterSceneLoadEvent(toSceneName);
+                yield return Fade(0);
             }
-
-            yield return SceneManager.LoadSceneAsync(toSceneName, LoadSceneMode.Additive);
-
-            currentSceneName = toSceneName;
-            Scene newScene = SceneManager.GetSceneByName(toSceneName);
-            SceneManager.SetActiveScene(newScene);
-
-            EventHandler.CallAfterSceneLoadEvent(toSceneName);
-            yield return Fade(0);
-            IsTrasition = false;
+            finally
+            {
+                if (canvasGroup) { canvasGroup.alpha = 0; canvasGroup.blocksRaycasts = false; }
+                IsTrasition = false;
+            }
         }
 
         private IEnumerator Fade(float targetAlpha)

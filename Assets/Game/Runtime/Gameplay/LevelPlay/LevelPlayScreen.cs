@@ -21,7 +21,9 @@ namespace Game.Runtime.Gameplay.LevelPlay
         public TMP_FontAsset uiFont;
         public bool loadOnStart = true;
         public bool showReturnToEditor;
+        public bool formalGame;
         public event Action ExitRequested;
+        public event Action<string> VictoryReached;
         public LevelPlaySession Session { get; private set; }
         private LevelPlayController controller;
         private LevelDefinition definition;
@@ -32,6 +34,8 @@ namespace Game.Runtime.Gameplay.LevelPlay
         private readonly List<LevelPlayRequest> requests = new List<LevelPlayRequest>();
         private int initializedFrame;
         private bool renderFailed;
+        private bool victoryReported;
+        private Button overlayContinue, overlayRetry, overlayBack;
         private static readonly Color Ink = new Color(.88f, .92f, .97f);
 
         private void Start()
@@ -45,6 +49,7 @@ namespace Game.Runtime.Gameplay.LevelPlay
                 { status.text = "无法开始试玩：" + e.Message + "\n请停止 Play，检查 Level Id 和 JSON。"; }
             }
             Refresh();
+            NotifyVictory();
         }
 
         public void Initialize(LevelDefinition initial)
@@ -55,6 +60,7 @@ namespace Game.Runtime.Gameplay.LevelPlay
             definition = next.Definition;
             controller = new LevelPlayController(next);
             renderFailed = false;
+            victoryReported = false;
             requests.Clear();
             initializedFrame = Time.frameCount;
             if (status) status.text = "方向键移动 · 空格迭代 · B 分身（Birth） · Z 撤销 · R 重置 · Esc 取消选择／暂停";
@@ -91,6 +97,7 @@ namespace Game.Runtime.Gameplay.LevelPlay
                 if (!string.IsNullOrEmpty(message)) status.text = Translate(message);
                 Refresh(message != "Level reset." && message != "Iteration undone.");
             }
+            NotifyVictory();
         }
 
         private void OnDisable()
@@ -116,7 +123,18 @@ namespace Game.Runtime.Gameplay.LevelPlay
         }
         private void Queue(LevelPlayCommand command) { if (isActiveAndEnabled) requests.Add(new LevelPlayRequest(command)); }
         private void SelectCell(int x, int y) { if (isActiveAndEnabled) requests.Add(new LevelPlayRequest(LevelPlayCommand.Select, x, y)); }
-        private void FinishAnimation() { Refresh(); }
+        private void FinishAnimation() { Refresh(); NotifyVictory(); }
+        private void NotifyVictory()
+        {
+            if (!formalGame || !isActiveAndEnabled || renderFailed || Session == null
+                || Session.Status != LevelPlayStatus.Won) return;
+            if (!victoryReported)
+            {
+                victoryReported = true;
+                VictoryReached?.Invoke(definition.id);
+            }
+            if (!board.IsAnimating) ReturnToEditor();
+        }
         private void ReturnToEditor()
         {
             requests.Clear();
@@ -146,6 +164,20 @@ namespace Game.Runtime.Gameplay.LevelPlay
             var cover = Box(area, "State Overlay", new Color(.035f, .055f, .09f, .72f)); Stretch(cover); overlay = cover.gameObject;
             overlayText = Label(cover, "", 0, 0, 0, 0, 26); Stretch(overlayText.rectTransform);
             overlayText.alignment = TextAlignmentOptions.Center;
+            if (formalGame)
+            {
+                overlayText.rectTransform.anchorMin = overlayText.rectTransform.anchorMax = new Vector2(.5f, .5f);
+                overlayText.rectTransform.pivot = new Vector2(.5f, .5f);
+                overlayText.rectTransform.sizeDelta = new Vector2(500, 100);
+                overlayText.rectTransform.anchoredPosition = new Vector2(0, 100);
+                overlayContinue = OverlayButton(cover, "继续", 10, () => Queue(LevelPlayCommand.Cancel));
+                overlayRetry = OverlayButton(cover, "重新开始", -48, () =>
+                {
+                    controller = new LevelPlayController(Session);
+                    Queue(LevelPlayCommand.Reset);
+                });
+                overlayBack = OverlayButton(cover, "返回选关", -106, ReturnToEditor);
+            }
 
             var panel = Box(root, "HUD", new Color(.09f, .13f, .2f));
             panel.anchorMin = new Vector2(1, 0); panel.anchorMax = Vector2.one;
@@ -165,9 +197,9 @@ namespace Game.Runtime.Gameplay.LevelPlay
             recycle = ActionButton(content, "回收分身", 392, LevelPlayCommand.Recycle);
             cancel = ActionButton(content, "取消选择  Esc", 444, LevelPlayCommand.Cancel);
             pause = ActionButton(content, "暂停／继续  Esc", 496, LevelPlayCommand.Pause);
-            if (showReturnToEditor)
+            if (showReturnToEditor || formalGame)
             {
-                var back = ActionButton(content, "结束试玩 · 返回编辑", 548, LevelPlayCommand.Cancel);
+                var back = ActionButton(content, formalGame ? "返回选关" : "结束试玩 · 返回编辑", 548, LevelPlayCommand.Cancel);
                 back.onClick.RemoveAllListeners(); back.onClick.AddListener(ReturnToEditor);
             }
             Label(content, "粉色：玩家 · 浅蓝：初始细胞\n深蓝：分身 · 金环：玩家终点\n紫环：细胞目标 · 黄框：可选位置", 14, 606, 308, 92, 16);
@@ -188,6 +220,17 @@ namespace Game.Runtime.Gameplay.LevelPlay
             bool loaded = Session != null;
             bool playing = loaded && Session.Status == LevelPlayStatus.Playing;
             bool paused = loaded && controller.Paused;
+            if (formalGame)
+            {
+                bool failed = loaded && Session.Status == LevelPlayStatus.Failed;
+                overlayContinue.gameObject.SetActive(paused || failed);
+                overlayContinue.GetComponentInChildren<TextMeshProUGUI>().text = paused ? "继续" : "撤销一轮  Z";
+                overlayContinue.onClick.RemoveAllListeners();
+                overlayContinue.onClick.AddListener(() => Queue(paused ? LevelPlayCommand.Cancel : LevelPlayCommand.Undo));
+                overlayContinue.interactable = paused || failed && Session.CanUndo;
+                overlayRetry.gameObject.SetActive(paused || failed);
+                overlayBack.gameObject.SetActive(true);
+            }
             if (loaded)
             {
                 try { board.Render(definition, Session, animate); board.Paused = paused; }
@@ -209,7 +252,7 @@ namespace Game.Runtime.Gameplay.LevelPlay
             pause.interactable = playing;
             overlay.SetActive(!loaded || paused || !playing && !board.IsAnimating);
             if (!loaded) { overlayText.text = "未加载可试玩的关卡\n请检查底部提示"; return; }
-            title.text = "玩法测试 · " + definition.id + " · " + definition.name;
+            title.text = (formalGame ? "" : "玩法测试 · ") + definition.id + " · " + definition.name;
             counters.text = "迭代  " + Session.Iteration + " / " + Session.IterationLimit + "\n分身  " + Session.LivingCloneCount + " / " + Session.CloneLimit
                 + "\n可撤销  " + Session.HistoryCount + " / " + LevelPlaySession.HistoryCapacity;
             mode.text = paused ? "已暂停" : Session.Mode == LevelInteractionMode.PlaceClone ? "分身模式：点击黄色空格\n取消后再进行其他操作"
@@ -253,6 +296,16 @@ namespace Game.Runtime.Gameplay.LevelPlay
             var button = rect.gameObject.AddComponent<LevelPlayButton>(); button.targetGraphic = rect.GetComponent<Image>();
             button.navigation = new Navigation { mode = Navigation.Mode.None }; button.onClick.AddListener(() => Queue(command));
             var label = Label(rect, caption, 0, 0, 308, 44, 19); label.alignment = TextAlignmentOptions.Center;
+            return button;
+        }
+        private Button OverlayButton(RectTransform parent, string caption, float y, Action action)
+        {
+            var rect = Box(parent, caption, new Color(.16f, .25f, .35f));
+            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(.5f, .5f);
+            rect.sizeDelta = new Vector2(280, 44); rect.anchoredPosition = new Vector2(0, y);
+            var button = rect.gameObject.AddComponent<LevelPlayButton>(); button.targetGraphic = rect.GetComponent<Image>();
+            button.navigation = new Navigation { mode = Navigation.Mode.None }; button.onClick.AddListener(() => action());
+            var label = Label(rect, caption, 0, 0, 280, 44, 20); label.alignment = TextAlignmentOptions.Center;
             return button;
         }
         private TextMeshProUGUI Label(RectTransform parent, string text, float x, float y, float w, float h, float size)

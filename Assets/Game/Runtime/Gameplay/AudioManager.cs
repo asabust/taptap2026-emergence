@@ -30,11 +30,13 @@ public class AudioManager : Singleton<AudioManager>
 
     void OnSceneLoaded(string sceneName)
     {
-        PlayMusic(GameManager.Instance.IsGameplay ? AudioName.BGM : AudioName.None);
+        var manager = GameManager.Instance;
+        PlayMusic(manager && manager.IsGameplay ? AudioName.BGM : AudioName.None);
     }
 
     public void PlayMusic(AudioName name)
     {
+        if (!musicSource) return;
         if (name == AudioName.None)
         {
             musicSource.Stop();
@@ -47,8 +49,14 @@ public class AudioManager : Singleton<AudioManager>
             return;
         }
 
+        AudioInf musicInfo = audioInfoListSO ? audioInfoListSO.GetAudioInfo(name) : null;
+        if (musicInfo == null || !musicInfo.clip)
+        {
+            musicSource.Stop();
+            currentMusic = AudioName.None;
+            return;
+        }
         currentMusic = name;
-        AudioInf musicInfo = audioInfoListSO.GetAudioInfo(name);
         musicSource.clip = musicInfo.clip;
         musicSource.volume = musicInfo.volume * _musicVolume;
         musicSource.loop = musicInfo.loop;
@@ -58,6 +66,7 @@ public class AudioManager : Singleton<AudioManager>
 
     public void PlaySFX(AudioName name)
     {
+        if (!sfxSource) return;
         if (name == AudioName.None)
         {
             sfxSource.Stop();
@@ -69,8 +78,9 @@ public class AudioManager : Singleton<AudioManager>
             return;
         }
 
+        AudioInf audioInf = audioInfoListSO ? audioInfoListSO.GetAudioInfo(name) : null;
+        if (audioInf == null || !audioInf.clip) return;
         currentSFX = name;
-        AudioInf audioInf = audioInfoListSO.GetAudioInfo(name);
         sfxSource.clip = audioInf.clip;
         sfxSource.volume = audioInf.volume * _sfxVolume;
         sfxSource.loop = audioInf.loop;

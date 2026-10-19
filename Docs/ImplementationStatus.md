@@ -6,9 +6,11 @@
 
 验证：实际 Unity DLL 的相关 C# 独立编译通过，git diff --check 通过；新增按钮布局、确认取消和实际退出仍需重新构建后手动验证。用户现有关卡修改未纳入此步骤。
 
-更新：2026-10-17
+更新：2026-10-19
 
 ## 当前总览
+
+阶段 7 首版流程已实现并通过 Unity Play Mode 场景集成检查，详见文末新增记录；独立平台构建仍待验证。用户已反馈关卡编辑器测试暂未发现问题、Mac 独立包可以编辑保存。此前阶段历史如下。
 
 阶段 1 已通过；阶段 2、3 已实现，用户于 2026-10-17 确认测试过 JSON 保存，`Assets/StreamingAssets/Levels/002.json` 为用户新建关卡。该确认不扩大为重载、全部交互或视觉验收均通过。阶段 4 共用玩法、阶段 5 撤销／重置／输入／HUD 的代码和独立检查已完成；用户已确认阶段 5 可玩，菜单与手动清单未逐项确认；阶段 6 同场景试玩及有机细胞渲染已实现，15 项新增检查通过；新版 Play Mode 与 Shader 编译／视觉验收待确认。
 
@@ -299,3 +301,35 @@ WebGL／Android 的 StreamingAssets 读取需要后续平台适配；`DeveloperD
 2026-10-17：按用户要求，已有文件下拉选择后立即开始加载流程，移除“加载选中”按钮。选择默认项不加载；程序刷新列表用防重入标志及 SetValueWithoutNotify，不触发加载。先在独立临时会话验证文件可读取／编辑，损坏或删除时直接刷新并选回“请选择已保存的关卡”，不替换当前草稿。有未保存内容仍保留原确认流程，取消后回到默认项；确认后重读文件，处理弹窗期间文件被删除或损坏的情况。列表目录读取失败时显示默认项及错误。
 
 验证：相关 UI／Editor 模块实际 Unity DLL 独立编译通过；既有 236 项逻辑检查全部通过。新增下拉事件与弹窗操作未在本次 Unity Play Mode 中执行；手动复核选择自动加载、取消未保存确认、选择后文件被删除／损坏时的默认项恢复。
+
+
+## 阶段 7：正式标题、人体选关、结算与进度（2026-10-19）
+
+用户确认：启动先到 Title，点击新游戏，之后进入人体选关、局部预览、明确点击进入关卡。开场剧情可省略，本阶段只留插入点。按配置顺序解锁，通关回选关并高亮下一关，不自动进入；末关显示全部完成。保存通关 ID 与音量，不保存局内状态。
+
+### 实现与入口
+
+- Data/Campaign/CampaignCatalog：ScriptableObject 展示目录，按列表顺序控制关卡顺序，按稳定 ID 关联 JSON；包含人体底图、归一化按钮位置、局部预览图与描述。配置实例 Assets/Resources/Campaign/Catalog.asset。
+- Gameplay/Campaign/CampaignProgress：无场景依赖的进度逻辑，严格版本／JSON 验证、顺序解锁、重复完成幂等、末关和稳定 ID 重排／暂时移除处理。
+- CampaignRuntime：启动注册场景回调；绑定现有 Title 的 NewGame／Setting／ExitGame 按钮；正式关卡读取、胜利订阅、进度 PlayerPrefs 保存和音量设置。仅正式入口给 LevelPlayScreen 设置 formalGame 并订阅，编辑器和直接 Gameplay 不写进度。
+- LevelSelectionScreen／CampaignUI：人体图节点、锁定／可进入／完成状态、局部预览、进入与返回、下一关高亮和全部完成提示。缺少局部彩图时暂用裁切着色图。
+- LevelPlayScreen：正式模式的暂停／失败面板，重试与返回选关；胜利成立时记录进度，动画结束后返回选关。
+- GameManager 的新游戏／标题方法接入正式协调器；GamePhase 末尾追加 LevelSelect，保留旧序列化值。
+- 修复实际 Play Mode 发现的 AudioManager 未配置 BGM 时空引用；TransitionManager 用 finally 释放切换状态和遮罩，防止回调异常卡死。切换期间的后续请求等待上次切换完成。
+- Editor/CampaignSceneSetup 菜单创建／配置关卡目录及 LevelSelect 场景，已有资源不覆盖；提供正式游戏／策划编辑器两种构建场景列表入口。本机已在 Unity 执行生成，未手写 Scene YAML。
+
+当前展示目录为 stage6_probe → 001 → 002，属于流程验证配置，未声明策划关卡可解性和正式内容排序已验收。Title 美术保持原样；开场对话未制作。“新游戏”目前保留既有完成进度，尚无清档入口。
+
+### 已执行验证
+
+- 既有 236 项 + 新增 29 项进度逻辑检查 = **265 项通过**。
+- 使用 Unity 自带 Roslyn 和实际 Unity DLL，Data、相关 Core、全部关卡编辑／玩法／正式流程模块及 Editor 工具独立编译通过；运行时 UNITY_EDITOR 和 Player 两个分支均编译通过。
+- Unity 2022.3.62f3 实际编译并执行 Configure Stage 7 Game Flow，生成场景及配置。
+- 实际点击验证：Persistent 启动 → Title → 新游戏 → 人体标记 → 局部预览 → Gameplay；暂停面板与暂停重试；失败面板显示撤销／重试／返回选关，点击撤销恢复至第 1 轮并关闭失败覆盖层；标题音量设置界面打开与关闭。
+- 实际通关操作期间发现音频空引用及切换标志卡住，已修复；随后 Unity 内执行 Run Campaign Integration Checks (Play Mode) 输出 PASS，覆盖正式场景加载、会话初始化、通关返回、下一关解锁／高亮、已保存进度重新读取。
+- 停止并重新进入 Play 后观察 probe 已完成、001 已解锁、002 仍锁定。测试留下 probe 的本机完成记录，未清除任何已有进度。
+- Build Settings 中核对正式四场景顺序，最终结束测试，停留 Persistent 非 Play 状态。
+
+### 验证限制与下一步
+
+独立 Mac／Windows／WebGL 构建尚未执行；WebGL 已新增请求读取分支，但浏览器请求、存档持久化和平台 Shader 仍待实包验证。末关 UI 代码边界通过纯逻辑检查，未实际逐关通关全部示例关卡。正式局部彩图、完整 HUD 美术、剧情对话、音效内容仍未完成。操作与配置说明见 Docs/CampaignQuickStart.md。

@@ -35,6 +35,11 @@ public class GameManager : Singleton<GameManager>
     /// </summary>
     public void StartNewGame()
     {
+        if (Game.Runtime.Gameplay.Campaign.CampaignRuntime.Instance)
+        {
+            Game.Runtime.Gameplay.Campaign.CampaignRuntime.Instance.BeginGame();
+            return;
+        }
         SetGamePhase(GamePhase.Gameplay);
         TransitionManager.Instance.TransitionTo(firstGameScene);
     }
@@ -44,6 +49,11 @@ public class GameManager : Singleton<GameManager>
     /// </summary>
     public void GameTitle()
     {
+        if (Game.Runtime.Gameplay.Campaign.CampaignRuntime.Instance)
+        {
+            Game.Runtime.Gameplay.Campaign.CampaignRuntime.Instance.ReturnToTitle();
+            return;
+        }
         SetGamePhase(GamePhase.GameTitle);
         TransitionManager.Instance.Transition(string.Empty, titleScene);
     }
