@@ -43,7 +43,7 @@ namespace Game.Runtime.Gameplay.LevelEditor
             var panel = Box(root, "Configuration", 0, 110, 332, 690, Panel);
             panel.anchorMin = panel.anchorMax = new Vector2(1, 1); panel.pivot = new Vector2(1, 1);
             panel.anchoredPosition = new Vector2(-20, -110);
-            RectTransform content = ScrollArea(panel, 0, 0, 332, 690, 1050);
+            RectTransform content = ScrollArea(panel, 0, 0, 332, 690, 1150);
             Label(content, "关卡配置", 16, 12, 280, 28, 20);
             lonelyToggle = RuleToggle(content, "孤独死亡（邻居 < 2）", 52);
             crowdedToggle = RuleToggle(content, "拥挤死亡（邻居 > 3）", 92);
@@ -82,7 +82,23 @@ namespace Game.Runtime.Gameplay.LevelEditor
             Button(cc, "应用数量条件", 0, 44, 280, 34, () => ApplyTargetIfNeeded());
             Label(content, "G：角色终点 · T：普通细胞覆盖\nT 可有多个格子，须同时覆盖。\n玩家不计入细胞数量，分身计入。", 16, 856, 280, 84, 15);
             Label(content, "保存会应用当前规则、上限和数量输入。\n草稿可不完整，校验后再制作试玩。", 16, 956, 280, 74, 14);
+            Button(content, "退出编辑器", 16, 1080, 280, 36, RequestQuit);
             ReadAllControls(); RefreshFileList();
+        }
+
+        private void RequestQuit()
+        {
+            if (modal || playtestObject) return;
+            ShowDialog("退出编辑器？", HasPendingEdits
+                ? "当前有未保存的编辑或未应用输入。退出后将丢失这些内容。\n如需保留，请取消并先保存关卡。"
+                : "关卡已保存。确认退出编辑器？", () =>
+                {
+#if UNITY_EDITOR
+                    UnityEditor.EditorApplication.isPlaying = false;
+#else
+                    Application.Quit();
+#endif
+                });
         }
 
         private bool HasPendingEdits => document.IsDirty || pendingFile || pendingSettings || pendingTarget
