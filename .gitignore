@@ -110,3 +110,5 @@ InitTestScene*.unity*
 /res
 /.idea
 /.vscode
+/MacBuild
+/WinBuild
