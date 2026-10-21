@@ -116,8 +116,14 @@ Shader "CellFusion/OrganicLevelBoard"
                     float nucleusAlpha = data.r < data.g ? smoothstep(0,1,saturate((_Progress-0.35)/0.65)) : life;
                     nucleus = max(nucleus, exp(-dot(p-cell,p-cell)/(_StyledTerrain > .5 ? .04 : .012))*nucleusAlpha);
                 }
-                Merge(length(p-_Player.xy)-_Player.z,float3(1,0.43,0.48),d,tint);
-                if (_PlayerTail.z > 0.001) Merge(length(p-_PlayerTail.xy)-_PlayerTail.z,float3(1,0.43,0.48),d,tint);
+                // Use the same smooth field for shape and colour: no separate circular
+                // player mask or saturated red surface underneath the contact region.
+                float playerD = length(p-_Player.xy)-_Player.z;
+                if (_PlayerTail.z > 0.001) playerD = min(playerD, length(p-_PlayerTail.xy)-_PlayerTail.z);
+                float lifeWeight = saturate(.5 + .5 * (playerD-d) / max(_Fusion,.001));
+                Merge(playerD, float3(1,.88,.93), d, tint);
+                float contact = 4 * lifeWeight * (1-lifeWeight);
+                tint = lerp(tint, float3(.76,.73,.94), contact * .65);
                 float aa = max(fwidth(d),0.002);
                 float inside = 1-smoothstep(-aa,aa,d);
                 float rim = exp(-pow(abs(d)/0.035,2));
@@ -165,9 +171,9 @@ Shader "CellFusion/OrganicLevelBoard"
                     float3 cellSurface = lerp(tint, float3(.86,.94,1), .12);
                     cellSurface = lerp(cellSurface, float3(.35,.42,.68), nucleus * .35);
                     float playerGlow = exp(-dot(p-_Player.xy,p-_Player.xy)/.065);
-                    float playerBody = 1-smoothstep(-aa,aa,length(p-_Player.xy)-_Player.z);
-                    cellSurface = lerp(cellSurface, float3(1,.95,.94), playerBody * .95);
-                    cellSurface = lerp(cellSurface, float3(.99,.6,.66), playerGlow * .85);
+                    // A soft central blush identifies the player without imposing a
+                    // second edge across the shared membrane.
+                    cellSurface = lerp(cellSurface, float3(.99,.62,.75), playerGlow * (1-lifeWeight) * .72);
                     cellSurface = lerp(cellSurface, float3(.91,.95,1), rim * .28);
                     float cellAlpha = saturate(inside + halo * .10);
                     float combinedAlpha = cellAlpha + alpha * (1-cellAlpha);
