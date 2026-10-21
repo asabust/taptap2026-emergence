@@ -10,5 +10,7 @@ namespace Game.Runtime.Data.Presentation
         public Texture2D undo;
         public Texture2D pause;
         public Texture2D rules;
+        public Texture2D clone;
+        public Texture2D victory;
     }
 }

@@ -60,6 +60,7 @@ namespace Game.Runtime.Gameplay.LevelPlay
             definition = next.Definition;
             controller = new LevelPlayController(next);
             renderFailed = false;
+            completionReady = false;
             victoryReported = false;
             requests.Clear();
             initializedFrame = Time.frameCount;
@@ -69,6 +70,10 @@ namespace Game.Runtime.Gameplay.LevelPlay
 
         private void LateUpdate()
         {
+            if (GamePresentation && (Game.Runtime.Gameplay.Campaign.CampaignInterface.BlocksGameplay
+                || Time.frameCount <= Game.Runtime.Gameplay.Campaign.CampaignInterface.ReleasedFrame))
+            { requests.Clear(); if (board) board.Paused = true; return; }
+            if (board && GamePresentation) board.Paused = controller != null && controller.Paused || rulesOpen;
             if (rulesOpen)
             {
                 requests.Clear();
@@ -88,10 +93,10 @@ namespace Game.Runtime.Gameplay.LevelPlay
                     Queue(controller.Paused || Session.Mode != LevelInteractionMode.Move ? LevelPlayCommand.Cancel : LevelPlayCommand.Pause);
                 if (keyboard.spaceKey.wasPressedThisFrame) Queue(LevelPlayCommand.Iterate);
                 if (keyboard.bKey.wasPressedThisFrame) Queue(LevelPlayCommand.Clone);
-                if (keyboard.upArrowKey.wasPressedThisFrame) Queue(LevelPlayCommand.Up);
-                if (keyboard.rightArrowKey.wasPressedThisFrame) Queue(LevelPlayCommand.Right);
-                if (keyboard.downArrowKey.wasPressedThisFrame) Queue(LevelPlayCommand.Down);
-                if (keyboard.leftArrowKey.wasPressedThisFrame) Queue(LevelPlayCommand.Left);
+                if (keyboard.upArrowKey.wasPressedThisFrame || keyboard.wKey.wasPressedThisFrame) Queue(LevelPlayCommand.Up);
+                if (keyboard.rightArrowKey.wasPressedThisFrame || keyboard.dKey.wasPressedThisFrame) Queue(LevelPlayCommand.Right);
+                if (keyboard.downArrowKey.wasPressedThisFrame || keyboard.sKey.wasPressedThisFrame) Queue(LevelPlayCommand.Down);
+                if (keyboard.leftArrowKey.wasPressedThisFrame || keyboard.aKey.wasPressedThisFrame) Queue(LevelPlayCommand.Left);
             }
             if (requests.Count > 0)
             {
@@ -139,7 +144,7 @@ namespace Game.Runtime.Gameplay.LevelPlay
                 victoryReported = true;
                 VictoryReached?.Invoke(definition.id);
             }
-            if (!board.IsAnimating) ReturnToEditor();
+            if (!board.IsAnimating) { completionReady = true; Refresh(); }
         }
         private void ReturnToEditor()
         {
@@ -227,6 +232,12 @@ namespace Game.Runtime.Gameplay.LevelPlay
             bool loaded = Session != null;
             bool playing = loaded && Session.Status == LevelPlayStatus.Playing;
             bool paused = loaded && controller.Paused;
+            if (prefabView)
+            {
+                bool failed = loaded && Session.Status == LevelPlayStatus.Failed;
+                prefabView.failure.gameObject.SetActive(failed && !paused && !board.IsAnimating);
+                prefabView.failure.primary.interactable = failed && Session.CanUndo;
+            }
             if (formalGame || GamePresentation)
             {
                 bool failed = loaded && Session.Status == LevelPlayStatus.Failed;
@@ -258,6 +269,7 @@ namespace Game.Runtime.Gameplay.LevelPlay
             cancel.interactable = playing && !paused && Session.Mode != LevelInteractionMode.Move;
             pause.interactable = playing;
             overlay.SetActive(!loaded || paused || !playing && !board.IsAnimating);
+            if (prefabView && loaded && Session.Status == LevelPlayStatus.Failed) overlay.SetActive(paused);
             if (!loaded) { overlayText.text = "未加载可试玩的关卡\n请检查底部提示"; return; }
             if (GamePresentation)
             {

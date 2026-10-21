@@ -13,7 +13,9 @@ MonoBehaviour:
   m_Name: Presentation
   m_EditorClassIdentifier: 
   background: {fileID: 2800000, guid: 923e766d0382f43c990ac2d9218ba8de, type: 3}
-  evolution: {fileID: 2800000, guid: fe9b30470b9b84070b7407604992306d, type: 3}
-  undo: {fileID: 2800000, guid: 373f176fe2bd44daa96e5cb9ac8a7b00, type: 3}
-  pause: {fileID: 2800000, guid: 0abceab4995264987bf50ff17ba7e76a, type: 3}
+  evolution: {fileID: 2800000, guid: 0c07e108301274809928f8e754f5f517, type: 3}
+  undo: {fileID: 2800000, guid: 6e73172b69ca346bf899022bb61e8854, type: 3}
+  pause: {fileID: 2800000, guid: b4d48811e63c54d71b067732cc6581c7, type: 3}
   rules: {fileID: 2800000, guid: 71e8c97f11c1c41cbb1b1dad14aa1a1a, type: 3}
+  clone: {fileID: 2800000, guid: 1895586c4bbe344888e44714f83037d6, type: 3}
+  victory: {fileID: 2800000, guid: baee6cf97a7f340eb877fe5fb287c1a8, type: 3}

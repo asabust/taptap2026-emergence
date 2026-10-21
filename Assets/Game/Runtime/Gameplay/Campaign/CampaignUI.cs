@@ -9,7 +9,7 @@ namespace Game.Runtime.Gameplay.Campaign
 {
     internal static class CampaignUI
     {
-        internal static TMP_FontAsset Font;
+        internal static TMP_FontAsset Font = null;
         internal static readonly Color Ink = new Color(.1f, .16f, .22f);
         internal static RectTransform Canvas(Transform parent, string name, int order = 40)
         {
@@ -48,12 +48,35 @@ namespace Game.Runtime.Gameplay.Campaign
         }
         internal static Button Button(RectTransform parent, string text, float x, float y, float w, Action clicked)
         {
-            var rect = Box(parent, text, x, y, w, 48, new Color(.17f, .36f, .42f));
+            var rect = Box(parent, text, x, y, w, 48, new Color(.36f, .39f, .60f, .94f));
             var button = rect.gameObject.AddComponent<Button>(); button.targetGraphic = rect.GetComponent<Image>();
             button.navigation = new Navigation { mode = Navigation.Mode.None };
             button.onClick.AddListener(() => { if (EventSystem.current) EventSystem.current.SetSelectedGameObject(null); clicked(); });
             var label = Label(rect, text, 0, 0, w, 48, 20); label.color = Color.white; label.alignment = TextAlignmentOptions.Center;
             return button;
+        }
+        internal static Button BackButton(RectTransform parent, Texture2D art, string text, float x, float y, Action action)
+        {
+            var button = Button(parent, text, x, y, 180, action);
+            if (art)
+            {
+                button.GetComponent<Image>().color = Color.clear;
+                button.GetComponentInChildren<TextMeshProUGUI>().gameObject.SetActive(false);
+                FittedPicture((RectTransform)button.transform, art);
+            }
+            return button;
+        }
+        internal static RawImage FittedPicture(RectTransform parent, Texture2D texture, bool cover = false)
+        {
+            var image = Picture(parent, texture, 0, 0, 0, 0);
+            Stretch(image.rectTransform);
+            if (texture)
+            {
+                var fit = image.gameObject.AddComponent<AspectRatioFitter>();
+                fit.aspectMode = cover ? AspectRatioFitter.AspectMode.EnvelopeParent : AspectRatioFitter.AspectMode.FitInParent;
+                fit.aspectRatio = (float)texture.width / texture.height;
+            }
+            return image;
         }
         internal static RawImage Picture(RectTransform parent, Texture texture, float x, float y, float w, float h)
         {

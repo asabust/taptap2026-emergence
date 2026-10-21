@@ -21,13 +21,14 @@ namespace Game.Runtime.Gameplay.Campaign
         public const string ProgressKey = "Campaign.Progress.v1";
         public static CampaignRuntime Instance { get; private set; }
         public CampaignCatalog Catalog { get; private set; }
+        public CampaignArt Art { get; private set; }
         public CampaignProgress Progress { get; private set; }
         public string Notice { get; private set; } = "";
         public string HighlightId { get; private set; }
         public bool Loading { get; private set; }
         private LevelDefinition pendingLevel;
         private bool progressWritable = true;
-        private GameObject dialog;
+        public CampaignInterface UI { get; private set; }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Bootstrap()
@@ -39,23 +40,27 @@ namespace Game.Runtime.Gameplay.Campaign
         private void Awake()
         {
             Instance = this; DontDestroyOnLoad(gameObject);
+            Art = Resources.Load<CampaignArt>("Campaign/Art");
             Catalog = Resources.Load<CampaignCatalog>("Campaign/Catalog");
             if (Catalog)
             {
                 try
                 {
                     Progress = new CampaignProgress(Catalog.levels?.Select(l => l?.id) ?? Enumerable.Empty<string>(), PlayerPrefs.GetString(ProgressKey, ""));
+                    if (Catalog.chapters.Count > 0) Progress.ConfigureChapters(Catalog.chapters.Select(c => c.levelIds.AsEnumerable()));
                     if (Progress.AllCompleted) Notice = "全部关卡已完成。可选择已完成关卡重玩。";
                 }
                 catch (Exception e) when (e is FormatException || e is ArgumentException)
                 {
                     Notice = "进度或关卡目录无法读取：" + e.Message + "\n原进度保留，本次不会覆盖存档。";
                     progressWritable = false;
-                    try { Progress = new CampaignProgress(Catalog.levels?.Select(l => l?.id) ?? Enumerable.Empty<string>()); }
+                    try { Progress = new CampaignProgress(Catalog.levels?.Select(l => l?.id) ?? Enumerable.Empty<string>());
+                        if (Catalog.chapters.Count > 0) Progress.ConfigureChapters(Catalog.chapters.Select(c => c.levelIds.AsEnumerable())); }
                     catch (ArgumentException) { Progress = null; }
                 }
             }
             SceneManager.sceneLoaded += SceneLoaded;
+            UI = gameObject.AddComponent<CampaignInterface>(); UI.Initialize(this);
         }
         private void OnDestroy()
         {
@@ -64,16 +69,16 @@ namespace Game.Runtime.Gameplay.Campaign
         }
         private void SceneLoaded(Scene scene, LoadSceneMode mode)
         {
+            CampaignUI.EnsureInput();
             Loading = false;
+            UI.SetLoading(false);
             if (scene.name == "TitleScene")
             {
-                CampaignUI.EnsureInput();
-                var labels = FindObjectsOfType<TextMeshProUGUI>();
-                CampaignUI.Font = labels.FirstOrDefault(t => t.font)?.font;
-                BindTitleButton("NewGame", BeginGame);
-                BindTitleButton("Setting", ShowSettings);
-                BindTitleButton("ExitGame", ConfirmQuit);
+                foreach (var canvas in FindObjectsOfType<Canvas>().Where(c => c.gameObject.scene == scene)) canvas.gameObject.SetActive(false);
+                UI.ShowTitle();
+                return;
             }
+            UI.ClearMain();
             if (scene.name == "Gameplay" && pendingLevel != null)
             {
                 var screen = FindObjectOfType<LevelPlayScreen>();
@@ -86,15 +91,6 @@ namespace Game.Runtime.Gameplay.Campaign
                 pendingLevel = null;
             }
         }
-        private void BindTitleButton(string name, Action action)
-        {
-            foreach (var button in FindObjectsOfType<Button>().Where(b => b.gameObject.scene.name == "TitleScene" && b.name == name))
-            {
-                button.onClick.RemoveAllListeners();
-                button.navigation = new Navigation { mode = Navigation.Mode.None };
-                button.onClick.AddListener(() => action());
-            }
-        }
         public void BeginGame()
         {
             if (Loading) return;
@@ -102,6 +98,7 @@ namespace Game.Runtime.Gameplay.Campaign
             { ShowMessage("关卡目录未配置", "请先执行 Tools → Levels → Configure Stage 7 Game Flow。"); return; }
             // Opening-dialogue insertion point. No story or read-state is invented here.
             HighlightId = Progress.RecommendedId;
+            UI.SelectedChapter = null;
             ChangeScene(SelectionScene, GamePhase.LevelSelect);
         }
         public void ReturnToSelection()
@@ -115,7 +112,15 @@ namespace Game.Runtime.Gameplay.Campaign
             if (Loading) return;
             if (!Application.CanStreamedLevelBeLoaded(name))
             { ShowMessage("无法切换场景", "构建列表缺少场景：" + name); return; }
+            var alreadyLoaded = SceneManager.GetSceneByName(name);
+            if (alreadyLoaded.IsValid() && alreadyLoaded.isLoaded)
+            {
+                SceneManager.SetActiveScene(alreadyLoaded);
+                FindObjectOfType<GameManager>()?.SetGamePhase(phase);
+                return;
+            }
             Loading = true;
+            UI.SetLoading(true);
             var manager = FindObjectOfType<GameManager>();
             if (manager) manager.SetGamePhase(phase);
             var transition = FindObjectOfType<TransitionManager>();
@@ -125,7 +130,11 @@ namespace Game.Runtime.Gameplay.Campaign
         private IEnumerator SwitchWhenReady(TransitionManager transition, string name)
         {
             while (transition && transition.IsTrasition) yield return null;
-            if (transition) transition.TransitionTo(name);
+            if (transition)
+            {
+                string current = SceneManager.GetActiveScene().name;
+                transition.Transition(current == "Persistent" ? "" : current, name);
+            }
             else SceneManager.LoadScene(name);
         }
         public void EnterLevel(string id, Action<string> failed)
@@ -134,6 +143,7 @@ namespace Game.Runtime.Gameplay.Campaign
             if (Progress == null || !Progress.IsUnlocked(id)) { failed("该关卡尚未解锁。"); return; }
             if (!Application.CanStreamedLevelBeLoaded("Gameplay")) { failed("构建列表缺少 Gameplay 场景。"); return; }
             Loading = true;
+            UI.SetLoading(true);
             StartCoroutine(LoadLevel(id, failed));
         }
         private IEnumerator LoadLevel(string id, Action<string> failed)
@@ -166,9 +176,11 @@ namespace Game.Runtime.Gameplay.Campaign
                 catch (Exception e) when (e is FormatException || e is ArgumentException) { error = e.Message; }
             }
             Loading = false;
+            UI.SetLoading(false);
             if (error != null) { failed("无法读取关卡 " + id + "：" + error); yield break; }
             HighlightId = id;
-            ChangeScene("Gameplay", GamePhase.Gameplay);
+            Loading = true;
+            UI.BeforeLevel(id, () => { Loading = false; ChangeScene("Gameplay", GamePhase.Gameplay); });
         }
         private void RecordVictory(string id)
         {
@@ -182,31 +194,11 @@ namespace Game.Runtime.Gameplay.Campaign
         }
         public void ShowSettings()
         {
-            if (dialog || Loading) return;
-            var root = OpenDialog("音量设置");
-            AddVolume(root, "音乐", "MusicVolume", 112, value => FindObjectOfType<AudioManager>()?.SetMusicVolume(value));
-            AddVolume(root, "音效", "SFXVolume", 202, value => FindObjectOfType<AudioManager>()?.SetSFXVolume(value));
-            CampaignUI.Button(root, "关闭", 180, 330, 240, () => { PlayerPrefs.Save(); CloseDialog(); });
-        }
-        private void AddVolume(RectTransform root, string label, string key, float y, Action<float> apply)
-        {
-            CampaignUI.Label(root, label, 40, y, 120, 40);
-            var track = CampaignUI.Box(root, label, 160, y, 380, 36, new Color(.7f, .76f, .78f));
-            var handle = CampaignUI.Box(track, "Handle", 0, 0, 24, 36, new Color(.15f, .4f, .45f));
-            handle.sizeDelta = new Vector2(24, 0);
-            var slider = track.gameObject.AddComponent<Slider>();
-            slider.handleRect = handle; slider.targetGraphic = handle.GetComponent<Image>(); slider.minValue = 0; slider.maxValue = 1;
-            slider.navigation = new Navigation { mode = Navigation.Mode.None };
-            slider.SetValueWithoutNotify(PlayerPrefs.GetFloat(key, 1));
-            slider.onValueChanged.AddListener(value => { PlayerPrefs.SetFloat(key, value); apply(value); });
+            UI.ShowSettings();
         }
         public void ConfirmQuit()
         {
-            if (dialog || Loading) return;
-            var root = OpenDialog("退出游戏？");
-            CampaignUI.Label(root, "已完成关卡的进度会保留。", 40, 130, 520, 100);
-            CampaignUI.Button(root, "取消", 40, 330, 240, CloseDialog);
-            CampaignUI.Button(root, "退出", 320, 330, 240, () =>
+            UI.Confirm("退出游戏？", "已完成关卡的进度会保留。", () =>
             {
                 PlayerPrefs.Save();
 #if UNITY_EDITOR
@@ -218,20 +210,7 @@ namespace Game.Runtime.Gameplay.Campaign
         }
         private void ShowMessage(string title, string message)
         {
-            if (dialog) return;
-            var root = OpenDialog(title);
-            CampaignUI.Label(root, message, 40, 100, 520, 220, 18);
-            CampaignUI.Button(root, "关闭", 180, 330, 240, CloseDialog);
+            UI.Message(title + "\n" + message);
         }
-        private RectTransform OpenDialog(string title)
-        {
-            CampaignUI.EnsureInput();
-            var canvas = CampaignUI.Canvas(transform, "Campaign Dialog", 100); dialog = canvas.gameObject;
-            var dim = CampaignUI.Box(canvas, "Dim", 0, 0, 0, 0, new Color(0, 0, 0, .75f)); CampaignUI.Stretch(dim);
-            var window = CampaignUI.Box(dim, "Window", 0, 0, 600, 420, new Color(.9f, .94f, .95f));
-            window.anchorMin = window.anchorMax = window.pivot = new Vector2(.5f, .5f); window.anchoredPosition = Vector2.zero;
-            CampaignUI.Label(window, title, 40, 30, 520, 48, 28); return window;
-        }
-        private void CloseDialog() { if (dialog) { dialog.SetActive(false); Destroy(dialog); dialog = null; } }
     }
 }

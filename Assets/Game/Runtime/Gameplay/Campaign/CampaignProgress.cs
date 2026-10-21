@@ -12,6 +12,22 @@ namespace Game.Runtime.Gameplay.Campaign
     {
         private readonly string[] ids;
         private readonly HashSet<string> completed = new HashSet<string>(StringComparer.Ordinal);
+        private string[][] chapters;
+
+        public void ConfigureChapters(IEnumerable<IEnumerable<string>> orderedChapters)
+        {
+            var next = orderedChapters.Select(c => c.ToArray()).ToArray();
+            if (next.Length == 0 || next.Any(c => c.Length == 0)
+                || !next.SelectMany(c => c).SequenceEqual(ids))
+                throw new ArgumentException("Chapters must partition the ordered catalog exactly.");
+            chapters = next;
+        }
+
+        public bool IsChapterUnlocked(int index)
+        {
+            return chapters != null && index >= 0 && index < chapters.Length
+                && (index == 0 || chapters.Take(index).All(c => c.All(IsCompleted)));
+        }
         public CampaignProgress(IEnumerable<string> orderedIds, string savedJson = null)
         {
             if (orderedIds == null) throw new ArgumentNullException(nameof(orderedIds));
@@ -34,6 +50,13 @@ namespace Game.Runtime.Gameplay.Campaign
         public bool IsCompleted(string id) => completed.Contains(id);
         public bool IsUnlocked(string id)
         {
+            if (chapters != null)
+            {
+                int chapter = Array.FindIndex(chapters, c => Array.IndexOf(c, id) >= 0);
+                if (chapter < 0 || !IsChapterUnlocked(chapter)) return false;
+                int slot = Array.IndexOf(chapters[chapter], id);
+                return chapters[chapter].Take(slot).All(IsCompleted);
+            }
             int index = Array.IndexOf(ids, id);
             return index >= 0 && (completed.Contains(id) || index == 0 || completed.Contains(ids[index - 1]));
         }

@@ -1,0 +1,1035 @@
+{
+  "lines": [
+    {
+      "lineId": "100",
+      "dialogueId": "chapter_01_01_story",
+      "order": 1,
+      "speakerName": "？？",
+      "portraitId": "o",
+      "text": "喂，听得见吗？先别起来。"
+    },
+    {
+      "lineId": "101",
+      "dialogueId": "chapter_01_01_story",
+      "order": 2,
+      "speakerName": "",
+      "portraitId": "",
+      "text": "你感到一阵头晕目眩。你撑了一下床沿，手臂却没使上力。有人扶住了你。"
+    },
+    {
+      "lineId": "102",
+      "dialogueId": "chapter_01_01_story",
+      "order": 3,
+      "speakerName": "你",
+      "portraitId": "player",
+      "text": "……这是哪？"
+    },
+    {
+      "lineId": "103",
+      "dialogueId": "chapter_01_01_story",
+      "order": 4,
+      "speakerName": "？？",
+      "portraitId": "o",
+      "text": "收容所，不过是暂时的。我叫小o，是这里的所长。我们在废弃设施附近找到你的。小葵和庄博士折腾了半天才把你修好。你叫什么名字？"
+    },
+    {
+      "lineId": "104",
+      "dialogueId": "chapter_01_01_story",
+      "order": 5,
+      "speakerName": "你",
+      "portraitId": "player",
+      "text": "我......"
+    },
+    {
+      "lineId": "105",
+      "dialogueId": "chapter_01_01_story",
+      "order": 6,
+      "speakerName": "",
+      "portraitId": "",
+      "text": "你想了很久。她没有催你。"
+    },
+    {
+      "lineId": "106",
+      "dialogueId": "chapter_01_01_story",
+      "order": 7,
+      "speakerName": "你",
+      "portraitId": "player",
+      "text": "......好像不记得了。"
+    },
+    {
+      "lineId": "107",
+      "dialogueId": "chapter_01_01_story",
+      "order": 8,
+      "speakerName": "小o",
+      "portraitId": "o",
+      "text": "看来你也有这些症状。送来的这些人，先是记忆乱码，后面就是......不受控制地去攻击任何人。"
+    },
+    {
+      "lineId": "108",
+      "dialogueId": "chapter_01_01_story",
+      "order": 9,
+      "speakerName": "你",
+      "portraitId": "player",
+      "text": "这是为什么？"
+    },
+    {
+      "lineId": "109",
+      "dialogueId": "chapter_01_01_story",
+      "order": 10,
+      "speakerName": "小o",
+      "portraitId": "o",
+      "text": "跟SYN-Σ03有关，几年前那次实验事故后...SYN-Σ03失控并且泄露到外面，许多人被感染后就有这些症状了。"
+    },
+    {
+      "lineId": "110",
+      "dialogueId": "chapter_01_01_story",
+      "order": 11,
+      "speakerName": "",
+      "portraitId": "",
+      "text": "听到这些，你想起一片冷白的灯光。再往下想，额角便开始发疼。"
+    },
+    {
+      "lineId": "111",
+      "dialogueId": "chapter_01_01_story",
+      "order": 12,
+      "speakerName": "小o",
+      "portraitId": "o",
+      "text": "想起什么了？"
+    },
+    {
+      "lineId": "112",
+      "dialogueId": "chapter_01_01_story",
+      "order": 13,
+      "speakerName": "你",
+      "portraitId": "player",
+      "text": "说不上来。你...能不能带我四处看看。"
+    },
+    {
+      "lineId": "113",
+      "dialogueId": "chapter_01_01_story",
+      "order": 14,
+      "speakerName": "",
+      "portraitId": "",
+      "text": "她带你来到隔壁。里面躺着个已报废的人工生命体。"
+    },
+    {
+      "lineId": "114",
+      "dialogueId": "chapter_01_01_story",
+      "order": 15,
+      "speakerName": "你",
+      "portraitId": "player",
+      "text": "这就是感染者吗？"
+    },
+    {
+      "lineId": "115",
+      "dialogueId": "chapter_01_01_story",
+      "order": 16,
+      "speakerName": "小o",
+      "portraitId": "o",
+      "text": "这个没救回来。小葵留了样本，此前我们想将“SYN-Σ03”的结构提取出来，但却毫无收获。"
+    },
+    {
+      "lineId": "116",
+      "dialogueId": "chapter_01_01_story",
+      "order": 17,
+      "speakerName": "",
+      "portraitId": "",
+      "text": "门外传出一声呼喊。"
+    },
+    {
+      "lineId": "117",
+      "dialogueId": "chapter_01_01_story",
+      "order": 18,
+      "speakerName": "小葵",
+      "portraitId": "kui",
+      "text": "外面又带了一批人进来，需要你帮忙。"
+    },
+    {
+      "lineId": "118",
+      "dialogueId": "chapter_01_01_story",
+      "order": 19,
+      "speakerName": "小o",
+      "portraitId": "o",
+      "text": "嗯，我现在过来。"
+    },
+    {
+      "lineId": "119",
+      "dialogueId": "chapter_01_01_story",
+      "order": 20,
+      "speakerName": "",
+      "portraitId": "",
+      "text": "她拍了一下你的肩膀。"
+    },
+    {
+      "lineId": "120",
+      "dialogueId": "chapter_01_01_story",
+      "order": 21,
+      "speakerName": "小o",
+      "portraitId": "o",
+      "text": "你先在这待一会，我很快回来。"
+    },
+    {
+      "lineId": "121",
+      "dialogueId": "chapter_01_01_story",
+      "order": 22,
+      "speakerName": "",
+      "portraitId": "",
+      "text": "小o走后，你低头看着这些接口和操作界面。手指碰到它时，一串操作指令自行浮现在脑海里。你突然想做点什么。"
+    },
+    {
+      "lineId": "122",
+      "dialogueId": "chapter_01_01_tutorial",
+      "order": 1,
+      "speakerName": "",
+      "portraitId": "",
+      "text": "使用【WASD】移动。"
+    },
+    {
+      "lineId": "123",
+      "dialogueId": "chapter_01_01_tutorial",
+      "order": 2,
+      "speakerName": "",
+      "portraitId": "",
+      "text": "点击【演化】，统一结算场上的【单元】。"
+    },
+    {
+      "lineId": "124",
+      "dialogueId": "chapter_01_01_tutorial",
+      "order": 3,
+      "speakerName": "",
+      "portraitId": "",
+      "text": "请抵达目标【接入点】，完成修复。"
+    },
+    {
+      "lineId": "125",
+      "dialogueId": "chapter_01_02_story",
+      "order": 1,
+      "speakerName": "",
+      "portraitId": "",
+      "text": "小o从外面回来后，看到了你的操作，做出惊讶的表情。"
+    },
+    {
+      "lineId": "126",
+      "dialogueId": "chapter_01_02_story",
+      "order": 2,
+      "speakerName": "小o",
+      "portraitId": "o",
+      "text": "你...刚才怎么弄的？"
+    },
+    {
+      "lineId": "127",
+      "dialogueId": "chapter_01_02_story",
+      "order": 3,
+      "speakerName": "你",
+      "portraitId": "player",
+      "text": "也许，我有办法尝试修复“SYN-Σ03”？我可以进入它的生命单位内。"
+    },
+    {
+      "lineId": "128",
+      "dialogueId": "chapter_01_02_story",
+      "order": 4,
+      "speakerName": "",
+      "portraitId": "",
+      "text": "你看着此前提取的结构记录，其中几处仍在微弱地闪动。"
+    },
+    {
+      "lineId": "129",
+      "dialogueId": "chapter_01_02_story",
+      "order": 5,
+      "speakerName": "你",
+      "portraitId": "player",
+      "text": "我可能还需要个“帮手”。"
+    },
+    {
+      "lineId": "130",
+      "dialogueId": "chapter_01_02_story",
+      "order": 6,
+      "speakerName": "小o",
+      "portraitId": "o",
+      "text": "我去问下庄博士，他留下的东西应该还能用。你坐着等，可别倒下了。"
+    },
+    {
+      "lineId": "131",
+      "dialogueId": "chapter_01_02_story",
+      "order": 7,
+      "speakerName": "小o",
+      "portraitId": "o",
+      "text": "庄博士问，你是不是以前在研究院做过这个。"
+    },
+    {
+      "lineId": "132",
+      "dialogueId": "chapter_01_02_story",
+      "order": 8,
+      "speakerName": "你",
+      "portraitId": "player",
+      "text": "我也想知道。"
+    },
+    {
+      "lineId": "133",
+      "dialogueId": "chapter_01_02_story",
+      "order": 9,
+      "speakerName": "",
+      "portraitId": "",
+      "text": "接口旁的指示灯忽然转红。你看了一眼小葵留下的检测结果，手停在操作界面上。短暂的迟疑后，一个熟悉的步骤浮现在脑海里。"
+    },
+    {
+      "lineId": "134",
+      "dialogueId": "chapter_01_02_tutorial",
+      "order": 1,
+      "speakerName": "",
+      "portraitId": "",
+      "text": "【单元】的存活取决于周围八格中的活【单元】。邻居【单元】为2—3个时存活，少于2个或达到4个时死亡。"
+    },
+    {
+      "lineId": "135",
+      "dialogueId": "chapter_01_02_tutorial",
+      "order": 2,
+      "speakerName": "",
+      "portraitId": "",
+      "text": "注意：你也算一个【单元】哦！但你的本体【单元】可以永久存活。"
+    },
+    {
+      "lineId": "136",
+      "dialogueId": "chapter_01_02_tutorial",
+      "order": 3,
+      "speakerName": "",
+      "portraitId": "",
+      "text": "请抵达目标【接入点】，完成修复。"
+    },
+    {
+      "lineId": "137",
+      "dialogueId": "chapter_02_01_story",
+      "order": 1,
+      "speakerName": "",
+      "portraitId": "",
+      "text": "你把两次记录放在一起查看。留下的部分并非始终存在，有些随着周围的组织一起消失了。"
+    },
+    {
+      "lineId": "138",
+      "dialogueId": "chapter_02_01_story",
+      "order": 2,
+      "speakerName": "小o",
+      "portraitId": "o",
+      "text": "这份样本撑不了几次了。还能接着试吗？"
+    },
+    {
+      "lineId": "139",
+      "dialogueId": "chapter_02_01_story",
+      "order": 3,
+      "speakerName": "你",
+      "portraitId": "player",
+      "text": "先等等，前方的组织系统太脆弱，要是稍有不慎，会......"
+    },
+    {
+      "lineId": "140",
+      "dialogueId": "chapter_02_01_story",
+      "order": 4,
+      "speakerName": "",
+      "portraitId": "",
+      "text": "你停住了。那句话说得太顺，连你自己都觉得陌生。"
+    },
+    {
+      "lineId": "141",
+      "dialogueId": "chapter_02_01_story",
+      "order": 5,
+      "speakerName": "小o",
+      "portraitId": "o",
+      "text": "也会什么？"
+    },
+    {
+      "lineId": "142",
+      "dialogueId": "chapter_02_01_story",
+      "order": 6,
+      "speakerName": "你",
+      "portraitId": "player",
+      "text": "...会触发连环反应，我再看一遍。"
+    },
+    {
+      "lineId": "143",
+      "dialogueId": "chapter_02_01_tutorial",
+      "order": 1,
+      "speakerName": "",
+      "portraitId": "",
+      "text": "【演化】次数有限。每点击一次【演化】，消耗1次。"
+    },
+    {
+      "lineId": "144",
+      "dialogueId": "chapter_02_01_tutorial",
+      "order": 2,
+      "speakerName": "",
+      "portraitId": "",
+      "text": "请在次数耗尽前抵达目标【接入点】，完成修复。"
+    },
+    {
+      "lineId": "145",
+      "dialogueId": "chapter_03_01_story",
+      "order": 1,
+      "speakerName": "",
+      "portraitId": "",
+      "text": "你清理出了一条的路径，正要断开接口，却发现旁边又有一处失去了反应。"
+    },
+    {
+      "lineId": "146",
+      "dialogueId": "chapter_03_01_story",
+      "order": 2,
+      "speakerName": "",
+      "portraitId": "",
+      "text": "你想重新接入，额角却突然传来一阵刺痛。小o按住了你的手。"
+    },
+    {
+      "lineId": "147",
+      "dialogueId": "chapter_03_01_story",
+      "order": 3,
+      "speakerName": "小o",
+      "portraitId": "o",
+      "text": "歇会儿吧。就算是人工生命体也不能这么熬。"
+    },
+    {
+      "lineId": "148",
+      "dialogueId": "chapter_03_01_story",
+      "order": 4,
+      "speakerName": "你",
+      "portraitId": "player",
+      "text": "我是......人工生命体？"
+    },
+    {
+      "lineId": "149",
+      "dialogueId": "chapter_03_01_story",
+      "order": 5,
+      "speakerName": "",
+      "portraitId": "",
+      "text": "你把袖口拉了下来，过了一会儿，才重新看向屏幕。"
+    },
+    {
+      "lineId": "150",
+      "dialogueId": "chapter_03_01_tutorial",
+      "order": 1,
+      "speakerName": "",
+      "portraitId": "",
+      "text": "使用【分裂】，在本体周围八格中的空位可生成一个【分身】。"
+    },
+    {
+      "lineId": "151",
+      "dialogueId": "chapter_03_01_tutorial",
+      "order": 2,
+      "speakerName": "",
+      "portraitId": "",
+      "text": "【分身】生成后留在原位，不会跟随本体移动。"
+    },
+    {
+      "lineId": "152",
+      "dialogueId": "chapter_03_01_tutorial",
+      "order": 3,
+      "speakerName": "",
+      "portraitId": "",
+      "text": "【分身】计入邻居数量，也遵守【单元】的死亡规则。"
+    },
+    {
+      "lineId": "153",
+      "dialogueId": "chapter_03_01_tutorial",
+      "order": 4,
+      "speakerName": "",
+      "portraitId": "",
+      "text": "请抵达目标【接入点】，完成修复。"
+    },
+    {
+      "lineId": "154",
+      "dialogueId": "chapter_04_01_story",
+      "order": 1,
+      "speakerName": "",
+      "portraitId": "",
+      "text": "整理实验结果时，终端接受了你的身份校验，随即弹出了一份旧文件。"
+    },
+    {
+      "lineId": "155",
+      "dialogueId": "chapter_04_01_story",
+      "order": 2,
+      "speakerName": "档案摘要",
+      "portraitId": "",
+      "text": "载体编号：B-07。意识模型写入记录。供体：寥博士。供体状态：*&￥%死亡"
+    },
+    {
+      "lineId": "156",
+      "dialogueId": "chapter_04_01_story",
+      "order": 3,
+      "speakerName": "你",
+      "portraitId": "player",
+      "text": "B-07……是我身上的编号。"
+    },
+    {
+      "lineId": "157",
+      "dialogueId": "chapter_04_01_story",
+      "order": 4,
+      "speakerName": "",
+      "portraitId": "",
+      "text": "文件中的大部分内容已经损坏。你反复打开同一个条目，耳边忽然响起一个声音。"
+    },
+    {
+      "lineId": "158",
+      "dialogueId": "chapter_04_01_story",
+      "order": 5,
+      "speakerName": "记忆中的声音",
+      "portraitId": "",
+      "text": "停下！你有没有想过后果。"
+    },
+    {
+      "lineId": "159",
+      "dialogueId": "chapter_04_01_story",
+      "order": 6,
+      "speakerName": "",
+      "portraitId": "",
+      "text": "一只手停在确认键上。你记得指尖触到屏幕的感觉，也记得自己没有收回手。"
+    },
+    {
+      "lineId": "160",
+      "dialogueId": "chapter_04_01_story",
+      "order": 7,
+      "speakerName": "你",
+      "portraitId": "player",
+      "text": "……是我按的。"
+    },
+    {
+      "lineId": "161",
+      "dialogueId": "chapter_04_01_story",
+      "order": 8,
+      "speakerName": "小o",
+      "portraitId": "o",
+      "text": "什么？"
+    },
+    {
+      "lineId": "162",
+      "dialogueId": "chapter_04_01_story",
+      "order": 9,
+      "speakerName": "你",
+      "portraitId": "player",
+      "text": "那次实验，...我看见了。"
+    },
+    {
+      "lineId": "163",
+      "dialogueId": "chapter_04_01_story",
+      "order": 10,
+      "speakerName": "小o",
+      "portraitId": "o",
+      "text": "你想起来了？"
+    },
+    {
+      "lineId": "164",
+      "dialogueId": "chapter_04_01_story",
+      "order": 11,
+      "speakerName": "你",
+      "portraitId": "player",
+      "text": "只有一点。"
+    },
+    {
+      "lineId": "165",
+      "dialogueId": "chapter_04_01_tutorial",
+      "order": 1,
+      "speakerName": "",
+      "portraitId": "",
+      "text": "本体周围八格为【繁殖区】，随本体移动而改变。"
+    },
+    {
+      "lineId": "166",
+      "dialogueId": "chapter_04_01_tutorial",
+      "order": 2,
+      "speakerName": "",
+      "portraitId": "",
+      "text": "【演化】时，【繁殖区】内的空格若恰好有3个邻居【单元】，就会生成一个新的【单元】。"
+    },
+    {
+      "lineId": "167",
+      "dialogueId": "chapter_04_01_tutorial",
+      "order": 3,
+      "speakerName": "",
+      "portraitId": "",
+      "text": "请利用【繁殖区】，让新生的【单元】占据目标【复生点】。"
+    },
+    {
+      "lineId": "168",
+      "dialogueId": "chapter_05_01_story",
+      "order": 1,
+      "speakerName": "",
+      "portraitId": "",
+      "text": "但寥博士的记录里有一份停止实验的申请。你将它读了两遍，往下翻，却只找到一条被撤销的访问记录。"
+    },
+    {
+      "lineId": "169",
+      "dialogueId": "chapter_05_01_story",
+      "order": 2,
+      "speakerName": "你",
+      "portraitId": "player",
+      "text": "他申请过停下来。"
+    },
+    {
+      "lineId": "170",
+      "dialogueId": "chapter_05_01_story",
+      "order": 3,
+      "speakerName": "小o",
+      "portraitId": "o",
+      "text": "后来呢？"
+    },
+    {
+      "lineId": "171",
+      "dialogueId": "chapter_05_01_story",
+      "order": 4,
+      "speakerName": "你",
+      "portraitId": "player",
+      "text": "不知道了。"
+    },
+    {
+      "lineId": "172",
+      "dialogueId": "chapter_05_01_story",
+      "order": 5,
+      "speakerName": "",
+      "portraitId": "",
+      "text": "修复已经推进到更深处，你想先完成眼前的事。但那只按下确认键的手，又浮现在眼前。"
+    },
+    {
+      "lineId": "173",
+      "dialogueId": "chapter_05_01_story",
+      "order": 6,
+      "speakerName": "",
+      "portraitId": "",
+      "text": "监测记录第一次出现了持续的回升。你将它与最初的记录并排放好。你看向桌上的记录。那份样本已经连续几轮没有出现异常。"
+    },
+    {
+      "lineId": "174",
+      "dialogueId": "chapter_05_01_story",
+      "order": 7,
+      "speakerName": "你",
+      "portraitId": "player",
+      "text": "可能还差最后一步......"
+    },
+    {
+      "lineId": "175",
+      "dialogueId": "chapter_05_01_tutorial",
+      "order": 1,
+      "speakerName": "",
+      "portraitId": "",
+      "text": "本章有两个目标：请让新生的【单元】占据目标【复生点】；请让本体抵达目标【接入点】，完成修复。"
+    },
+    {
+      "lineId": "176",
+      "dialogueId": "chapter_05_last_after_story",
+      "order": 1,
+      "speakerName": "",
+      "portraitId": "",
+      "text": "你把最后一份记录交给小葵。"
+    },
+    {
+      "lineId": "177",
+      "dialogueId": "chapter_05_last_after_story",
+      "order": 2,
+      "speakerName": "你",
+      "portraitId": "player",
+      "text": "其他人试过了吗？"
+    },
+    {
+      "lineId": "178",
+      "dialogueId": "chapter_05_last_after_story",
+      "order": 3,
+      "speakerName": "小o",
+      "portraitId": "o",
+      "text": "试过了，看来已经是修复好了，到时候，所有人都有救了！"
+    },
+    {
+      "lineId": "179",
+      "dialogueId": "chapter_05_last_after_story",
+      "order": 4,
+      "speakerName": "",
+      "portraitId": "",
+      "text": "小o看见了你收好的东西。"
+    },
+    {
+      "lineId": "180",
+      "dialogueId": "chapter_05_last_after_story",
+      "order": 5,
+      "speakerName": "小o",
+      "portraitId": "o",
+      "text": "你要走？"
+    },
+    {
+      "lineId": "181",
+      "dialogueId": "chapter_05_last_after_story",
+      "order": 6,
+      "speakerName": "你",
+      "portraitId": "player",
+      "text": "我想回找到我的地方看看。"
+    },
+    {
+      "lineId": "182",
+      "dialogueId": "chapter_05_last_after_story",
+      "order": 7,
+      "speakerName": "小o",
+      "portraitId": "o",
+      "text": "那边还是一片废墟，况且外面很多地方都很危险。"
+    },
+    {
+      "lineId": "183",
+      "dialogueId": "chapter_05_last_after_story",
+      "order": 8,
+      "speakerName": "你",
+      "portraitId": "player",
+      "text": "我知道。"
+    },
+    {
+      "lineId": "184",
+      "dialogueId": "chapter_05_last_after_story",
+      "order": 9,
+      "speakerName": "你",
+      "portraitId": "player",
+      "text": "那次实验……我想起来的部分，不太好。"
+    },
+    {
+      "lineId": "185",
+      "dialogueId": "chapter_05_last_after_story",
+      "order": 10,
+      "speakerName": "小o",
+      "portraitId": "o",
+      "text": "你不是说，后面还有记录没打开吗？"
+    },
+    {
+      "lineId": "186",
+      "dialogueId": "chapter_05_last_after_story",
+      "order": 11,
+      "speakerName": "你",
+      "portraitId": "player",
+      "text": "我记得自己按下去了，但可能事情没这么简单。"
+    },
+    {
+      "lineId": "187",
+      "dialogueId": "chapter_05_last_after_story",
+      "order": 12,
+      "speakerName": "",
+      "portraitId": "",
+      "text": "小o看了你一会儿，把一个箱子交给你。"
+    },
+    {
+      "lineId": "188",
+      "dialogueId": "chapter_05_last_after_story",
+      "order": 13,
+      "speakerName": "小o",
+      "portraitId": "o",
+      "text": "里面是一些物资，注意安全。下次要是回来，记得告诉我你的名字。"
+    },
+    {
+      "lineId": "189",
+      "dialogueId": "chapter_05_last_after_story",
+      "order": 14,
+      "speakerName": "",
+      "portraitId": "",
+      "text": "你点了点头，走进尚未亮灯的街道。"
+    },
+    {
+      "lineId": "190",
+      "dialogueId": "chapter_05_last_after_story",
+      "order": 15,
+      "speakerName": "",
+      "portraitId": "",
+      "text": "小葵整理你留下的记录时，发现终端里还有一项读取任务。进度停了很久，终于又往前跳了一格。"
+    },
+    {
+      "lineId": "191",
+      "dialogueId": "chapter_05_last_after_story",
+      "order": 16,
+      "speakerName": "终端",
+      "portraitId": "",
+      "text": "关联文件恢复完成。已收录至档案。"
+    }
+  ],
+  "groups": [
+    {
+      "dialogueId": "chapter_01_01_story",
+      "levelId": "001",
+      "kind": "Story",
+      "timing": "BeforeLevel",
+      "order": 1
+    },
+    {
+      "dialogueId": "chapter_01_01_tutorial",
+      "levelId": "001",
+      "kind": "Tutorial",
+      "timing": "BeforeLevel",
+      "order": 2
+    },
+    {
+      "dialogueId": "chapter_01_02_story",
+      "levelId": "002",
+      "kind": "Story",
+      "timing": "BeforeLevel",
+      "order": 1
+    },
+    {
+      "dialogueId": "chapter_01_02_tutorial",
+      "levelId": "002",
+      "kind": "Tutorial",
+      "timing": "BeforeLevel",
+      "order": 2
+    },
+    {
+      "dialogueId": "chapter_02_01_story",
+      "levelId": "101",
+      "kind": "Story",
+      "timing": "BeforeLevel",
+      "order": 1
+    },
+    {
+      "dialogueId": "chapter_02_01_tutorial",
+      "levelId": "101",
+      "kind": "Tutorial",
+      "timing": "BeforeLevel",
+      "order": 2
+    },
+    {
+      "dialogueId": "chapter_03_01_story",
+      "levelId": "201",
+      "kind": "Story",
+      "timing": "BeforeLevel",
+      "order": 1
+    },
+    {
+      "dialogueId": "chapter_03_01_tutorial",
+      "levelId": "201",
+      "kind": "Tutorial",
+      "timing": "BeforeLevel",
+      "order": 2
+    },
+    {
+      "dialogueId": "chapter_04_01_story",
+      "levelId": "301",
+      "kind": "Story",
+      "timing": "BeforeLevel",
+      "order": 1
+    },
+    {
+      "dialogueId": "chapter_04_01_tutorial",
+      "levelId": "301",
+      "kind": "Tutorial",
+      "timing": "BeforeLevel",
+      "order": 2
+    },
+    {
+      "dialogueId": "chapter_05_01_story",
+      "levelId": "401",
+      "kind": "Story",
+      "timing": "BeforeLevel",
+      "order": 1
+    },
+    {
+      "dialogueId": "chapter_05_01_tutorial",
+      "levelId": "401",
+      "kind": "Tutorial",
+      "timing": "BeforeLevel",
+      "order": 2
+    },
+    {
+      "dialogueId": "chapter_05_last_after_story",
+      "levelId": "404",
+      "kind": "Story",
+      "timing": "AfterWin",
+      "order": 1
+    }
+  ],
+  "archives": [
+    {
+      "archiveId": "archive_01",
+      "title": "实验报告一",
+      "body": "【SYN-Σ03项目摘要】\n\n项目名称：弥序体\n\n研发编号：SYN-Σ03\n\n用途：替代衰败的维生组织。\n\n弥序单元接入受损部位后，可与邻近单元建立连接。连接条件适宜时，局部组织能够持续存活；单独提取的样本则往往迅速失活。移植前须保留原有结构记录，不得仅以单元数量判断样本是否完好。\n\n附注：本阶段尚未完成大规模接入验证。禁止将局部试验结果直接用于居民维生系统。",
+      "illustrationId": "",
+      "caption": ""
+    },
+    {
+      "archiveId": "archive_02",
+      "title": "一份申请",
+      "body": "【一份申请】\n\n日期：3599.01.28\n申请事项：暂停统一接入试验。\n\n第三组样本出现了与第一组相同的坏死。接入指令能够覆盖原有反应，却不能保证指令撤除后组织继续存活。\n请不要再增加接入数量。先将已经接入的部分撤回，我们还来得及保存样本。\n附加申请：撤回本人意识模型用于本项目后续试验的授权。\n\n申请人：寥博士\n\n处理结果：驳回。\n批注：意识模型已列入项目资产。人员权限调整另行通知。",
+      "illustrationId": "",
+      "caption": ""
+    },
+    {
+      "archiveId": "archive_03",
+      "title": "统一接入试验操作记录",
+      "body": "【统一接入试验操作记录】\n日期：3599.02.09\n操作员：椰博士\n14:21　外围区域接入完成。\n14:23　监测到多处组织异常。\n14:24　收到现场中止请求。\n现场通讯节录：\n“停下！你有没有想过后果。”\n14:24　中止请求驳回。\n14:25　人工确认，继续接入。\n14:27　外围监测中断。\n14:29　隔离程序启动失败。\n后续记录缺失。",
+      "illustrationId": "",
+      "caption": ""
+    },
+    {
+      "archiveId": "archive_04",
+      "title": "B-07维护记录",
+      "body": "【B-07维护记录】\n\n载体编号：B-07\n\n基础意识模型供体：寥博士\n\n意识模型写入，10%。\n意识模型写入，20%。\n意识模型写入，30%。\n意识模型写入，40%。\n意识模型写入，50%。\n写入中断，供能异常。\n%……&*￥#%写入已停止。\n\n检测到记忆缓存￥%……##+。》》\n警告：记忆缓存来源与载体登记供体不一致。\n……&￥p%*&*椰（#*博//》士\n来源校验失败。写入中止指令无响应。\n缓存并入当前写入队列。\n\n\n执行状态：未完成。",
+      "illustrationId": "",
+      "caption": ""
+    }
+  ],
+  "chapters": [
+    {
+      "id": "chapter_01",
+      "title": "新手教程",
+      "bodyPart": "左大腿",
+      "archiveId": "archive_01",
+      "bodyPosition": {
+        "x": 0.4,
+        "y": 0.35
+      },
+      "levelIds": [
+        "001",
+        "002"
+      ]
+    },
+    {
+      "id": "chapter_02",
+      "title": "基础死亡规则",
+      "bodyPart": "右盆骨",
+      "archiveId": "archive_02",
+      "bodyPosition": {
+        "x": 0.6,
+        "y": 0.53
+      },
+      "levelIds": [
+        "101",
+        "102",
+        "103",
+        "104"
+      ]
+    },
+    {
+      "id": "chapter_03",
+      "title": "分裂细胞",
+      "bodyPart": "腰椎",
+      "archiveId": "archive_03",
+      "bodyPosition": {
+        "x": 0.52,
+        "y": 0.61
+      },
+      "levelIds": [
+        "201",
+        "202",
+        "203",
+        "204"
+      ]
+    },
+    {
+      "id": "chapter_04",
+      "title": "区域繁殖与额外目标",
+      "bodyPart": "心脏",
+      "archiveId": "archive_04",
+      "bodyPosition": {
+        "x": 0.59,
+        "y": 0.73
+      },
+      "levelIds": [
+        "301",
+        "302",
+        "303",
+        "304"
+      ]
+    },
+    {
+      "id": "chapter_05",
+      "title": "综合考验",
+      "bodyPart": "大脑",
+      "archiveId": "",
+      "bodyPosition": {
+        "x": 0.53,
+        "y": 0.91
+      },
+      "levelIds": [
+        "401",
+        "402",
+        "403",
+        "404"
+      ]
+    }
+  ],
+  "levels": [
+    {
+      "id": "001",
+      "title": "新手教程1",
+      "description": ""
+    },
+    {
+      "id": "002",
+      "title": "新手教程2",
+      "description": ""
+    },
+    {
+      "id": "101",
+      "title": "第一章-1",
+      "description": ""
+    },
+    {
+      "id": "102",
+      "title": "第一章-2",
+      "description": ""
+    },
+    {
+      "id": "103",
+      "title": "第一章-3",
+      "description": ""
+    },
+    {
+      "id": "104",
+      "title": "第一章-4",
+      "description": ""
+    },
+    {
+      "id": "201",
+      "title": "第二章-1",
+      "description": ""
+    },
+    {
+      "id": "202",
+      "title": "第二章-2",
+      "description": ""
+    },
+    {
+      "id": "203",
+      "title": "第二章-3",
+      "description": ""
+    },
+    {
+      "id": "204",
+      "title": "第二章-4",
+      "description": ""
+    },
+    {
+      "id": "301",
+      "title": "第三章-1",
+      "description": ""
+    },
+    {
+      "id": "302",
+      "title": "第三章-2",
+      "description": ""
+    },
+    {
+      "id": "303",
+      "title": "第三章-3",
+      "description": ""
+    },
+    {
+      "id": "304",
+      "title": "第三章-4",
+      "description": ""
+    },
+    {
+      "id": "401",
+      "title": "第四章-1",
+      "description": ""
+    },
+    {
+      "id": "402",
+      "title": "第四章-2",
+      "description": ""
+    },
+    {
+      "id": "403",
+      "title": "第四章-3",
+      "description": ""
+    },
+    {
+      "id": "404",
+      "title": "第四章-4",
+      "description": ""
+    }
+  ]
+}

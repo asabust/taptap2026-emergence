@@ -50,6 +50,24 @@ namespace Game.Editor
                 "{\"version\":1,\"version\":1,\"completed\":[]}" })
                 Reject(() => new CampaignProgress(new[] { "a" }, json), "malformed progress rejected");
             Check(p.Serialize() == new CampaignProgress(new[] { "a", "b", "c" }, p.Serialize()).Serialize(), "deterministic serialization");
+            var chapterProgress = new CampaignProgress(new[] { "001", "002", "101", "102", "404" });
+            var chapters = new[] { new[] { "001", "002" }, new[] { "101", "102" }, new[] { "404" } };
+            chapterProgress.ConfigureChapters(chapters);
+            Check(chapterProgress.IsChapterUnlocked(0) && !chapterProgress.IsChapterUnlocked(1), "fresh first chapter only");
+            chapterProgress.Complete("001");
+            Check(chapterProgress.IsUnlocked("002") && !chapterProgress.IsUnlocked("101"), "one member does not complete chapter");
+            Reject(() => chapterProgress.Complete("101"), "loading entry cannot bypass chapter gate");
+            chapterProgress.Complete("002");
+            Check(chapterProgress.IsChapterUnlocked(1) && chapterProgress.IsUnlocked("101") && !chapterProgress.IsUnlocked("102"), "all chapter members unlock next chapter first level");
+            chapterProgress.Complete("101"); chapterProgress.Complete("102"); chapterProgress.Complete("404");
+            Check(chapterProgress.AllCompleted && chapterProgress.NextId("404") == null, "final level completion boundary");
+            var roundtripChapters = new CampaignProgress(new[] { "001", "002", "101", "102", "404" }, chapterProgress.Serialize());
+            roundtripChapters.ConfigureChapters(chapters);
+            Check(roundtripChapters.IsUnlocked("001") && roundtripChapters.IsUnlocked("404"), "chapter progress roundtrip and replay");
+            var incompleteLegacy = new CampaignProgress(new[] { "001", "002", "101", "102", "404" }, "{\"version\":1,\"completed\":[\"002\",\"101\"]}");
+            incompleteLegacy.ConfigureChapters(chapters);
+            Check(!incompleteLegacy.IsUnlocked("101"), "legacy late completion does not bypass missing chapter members");
+            Reject(() => chapterProgress.ConfigureChapters(new[] { new[] { "001" } }), "chapter partition must match catalog");
             return checks;
         }
 #if UNITY_EDITOR
