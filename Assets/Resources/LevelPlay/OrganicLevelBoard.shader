@@ -84,6 +84,8 @@ Shader "CellFusion/OrganicLevelBoard"
                 float eased = smoothstep(0, 1, _Progress);
                 float d = 100, nucleus = 0;
                 float3 tint = float3(0.5,0.7,0.85);
+                float3 pigment = 0;
+                float pigmentWeight = 0;
                 // Local 5x5 sampling keeps cost bounded as boards grow to 30x30.
                 [loop] for (int dy = -2; dy <= 2; dy++)
                 [loop] for (int dx = -2; dx <= 2; dx++)
@@ -113,17 +115,23 @@ Shader "CellFusion/OrganicLevelBoard"
                     float3 cellColor = lerp(float3(.54,.79,.92), float3(0.32,0.48,0.96),clone);
                     if (_StyledTerrain > .5) cellColor = lerp(float3(.54,.79,.92), float3(.43,.48,.85), clone);
                     Merge(length(p-center)-.50*life, cellColor, d, tint);
+                    // Broad normalized pigment fields let colour diffuse through the
+                    // connected body independently of the narrow membrane blend.
+                    float colourWeight = exp(-dot(p-center,p-center)/.55) * life;
+                    pigment += cellColor * colourWeight;
+                    pigmentWeight += colourWeight;
                     float nucleusAlpha = data.r < data.g ? smoothstep(0,1,saturate((_Progress-0.35)/0.65)) : life;
                     nucleus = max(nucleus, exp(-dot(p-cell,p-cell)/(_StyledTerrain > .5 ? .04 : .012))*nucleusAlpha);
                 }
-                // Use the same smooth field for shape and colour: no separate circular
-                // player mask or saturated red surface underneath the contact region.
                 float playerD = length(p-_Player.xy)-_Player.z;
                 if (_PlayerTail.z > 0.001) playerD = min(playerD, length(p-_PlayerTail.xy)-_PlayerTail.z);
-                float lifeWeight = saturate(.5 + .5 * (playerD-d) / max(_Fusion,.001));
-                Merge(playerD, float3(1,.88,.93), d, tint);
-                float contact = 4 * lifeWeight * (1-lifeWeight);
-                tint = lerp(tint, float3(.76,.73,.94), contact * .65);
+                Merge(playerD, float3(.98,.77,.91), d, tint);
+                float playerPigment = exp(-dot(p-_Player.xy,p-_Player.xy)/.55);
+                if (_PlayerTail.z > .001)
+                    playerPigment = max(playerPigment, exp(-dot(p-_PlayerTail.xy,p-_PlayerTail.xy)/.55) * _PlayerTail.z / _Player.z);
+                float totalPigment = pigmentWeight + playerPigment;
+                float playerWeight = playerPigment / max(totalPigment,.000001);
+                tint = (pigment + float3(.98,.77,.91)*playerPigment) / max(totalPigment,.000001);
                 float aa = max(fwidth(d),0.002);
                 float inside = 1-smoothstep(-aa,aa,d);
                 float rim = exp(-pow(abs(d)/0.035,2));
@@ -173,7 +181,7 @@ Shader "CellFusion/OrganicLevelBoard"
                     float playerGlow = exp(-dot(p-_Player.xy,p-_Player.xy)/.065);
                     // A soft central blush identifies the player without imposing a
                     // second edge across the shared membrane.
-                    cellSurface = lerp(cellSurface, float3(.99,.62,.75), playerGlow * (1-lifeWeight) * .72);
+                    cellSurface = lerp(cellSurface, float3(.99,.62,.75), playerGlow * playerWeight * .55);
                     cellSurface = lerp(cellSurface, float3(.91,.95,1), rim * .28);
                     float cellAlpha = saturate(inside + halo * .10);
                     float combinedAlpha = cellAlpha + alpha * (1-cellAlpha);
