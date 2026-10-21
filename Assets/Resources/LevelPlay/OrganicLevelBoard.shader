@@ -112,8 +112,8 @@ Shader "CellFusion/OrganicLevelBoard"
                         if (count>0) center=lerp(source/count,cell,eased);
                     }
                     float clone = lerp(data.b, data.a, eased);
-                    float3 cellColor = lerp(float3(.54,.79,.92), float3(0.32,0.48,0.96),clone);
-                    if (_StyledTerrain > .5) cellColor = lerp(float3(.54,.79,.92), float3(.43,.48,.85), clone);
+                    float3 cellColor = lerp(float3(.455,.486,.737), float3(.329,.329,.706),clone);
+                    if (_StyledTerrain > .5) cellColor = lerp(float3(.455,.486,.737), float3(.329,.329,.706), clone);
                     Merge(length(p-center)-.50*life, cellColor, d, tint);
                     // Broad normalized pigment fields let colour diffuse through the
                     // connected body independently of the narrow membrane blend.
@@ -125,13 +125,13 @@ Shader "CellFusion/OrganicLevelBoard"
                 }
                 float playerD = length(p-_Player.xy)-_Player.z;
                 if (_PlayerTail.z > 0.001) playerD = min(playerD, length(p-_PlayerTail.xy)-_PlayerTail.z);
-                Merge(playerD, float3(.98,.77,.91), d, tint);
+                Merge(playerD, float3(.863,.675,.549), d, tint);
                 float playerPigment = exp(-dot(p-_Player.xy,p-_Player.xy)/.55);
                 if (_PlayerTail.z > .001)
                     playerPigment = max(playerPigment, exp(-dot(p-_PlayerTail.xy,p-_PlayerTail.xy)/.55) * _PlayerTail.z / _Player.z);
                 float totalPigment = pigmentWeight + playerPigment;
                 float playerWeight = playerPigment / max(totalPigment,.000001);
-                tint = (pigment + float3(.98,.77,.91)*playerPigment) / max(totalPigment,.000001);
+                tint = (pigment + float3(.863,.675,.549)*playerPigment) / max(totalPigment,.000001);
                 float aa = max(fwidth(d),0.002);
                 float inside = 1-smoothstep(-aa,aa,d);
                 float rim = exp(-pow(abs(d)/0.035,2));
@@ -146,10 +146,10 @@ Shader "CellFusion/OrganicLevelBoard"
                 float3 body = lerp(tint,float3(0.88,0.94,0.9),0.38);
                 float3 color = lerp(bg,body,inside*0.65);
                 color = lerp(color,tint,halo*0.18);
-                color = lerp(color,float3(1,0.91,0.97),rim*0.8);
+                color = lerp(color,float3(.94,.94,1),rim*0.8);
                 color = lerp(color,float3(0.13,0.23,0.29),nucleus*0.9);
                 float playerNucleus = exp(-dot(p-_Player.xy,p-_Player.xy)/0.012);
-                color = lerp(color,float3(0.48,0.09,0.14),playerNucleus);
+                color = lerp(color,float3(.58,.32,.13),playerNucleus);
                 float ring = 1-smoothstep(0.02,0.02+aa,abs(length(p-tile)-0.31));
                 if (ground.g > 0.5) color = lerp(color,float3(0.85,0.62,0.16),ring);
                 if (ground.b > 0.5) color = lerp(color,float3(0.58,0.3,0.8),ring);
@@ -177,11 +177,11 @@ Shader "CellFusion/OrganicLevelBoard"
                     float3 shadowColor = float3(.28,.32,.39);
                     color = lerp(shadowColor, litTerrain, terrainAlpha / max(alpha,.001));
                     float3 cellSurface = lerp(tint, float3(.86,.94,1), .12);
-                    cellSurface = lerp(cellSurface, float3(.35,.42,.68), nucleus * .35);
+                    cellSurface = lerp(cellSurface, float3(.329,.329,.706), nucleus * .35);
                     float playerGlow = exp(-dot(p-_Player.xy,p-_Player.xy)/.065);
                     // A soft central blush identifies the player without imposing a
                     // second edge across the shared membrane.
-                    cellSurface = lerp(cellSurface, float3(.99,.62,.75), playerGlow * playerWeight * .55);
+                    cellSurface = lerp(cellSurface, float3(.831,.518,.204), playerGlow * playerWeight * .55);
                     cellSurface = lerp(cellSurface, float3(.91,.95,1), rim * .28);
                     float cellAlpha = saturate(inside + halo * .10);
                     float combinedAlpha = cellAlpha + alpha * (1-cellAlpha);
