@@ -209,7 +209,7 @@ namespace Game.Runtime.Gameplay.LevelPlay
                 var back = ActionButton(content, formalGame ? "返回选关" : "结束试玩 · 返回编辑", 548, LevelPlayCommand.Cancel);
                 back.onClick.RemoveAllListeners(); back.onClick.AddListener(ReturnToEditor);
             }
-            Label(content, "粉色：玩家 · 浅蓝：初始细胞\n深蓝：分身 · 金环：玩家终点\n紫环：细胞目标 · 黄框：可选位置", 14, 606, 308, 92, 16);
+            Label(content, "粉色：玩家 · 淡黄：普通细胞\n深蓝：分身 · 金环：玩家终点\n紫环：细胞目标 · 黄框：可选位置", 14, 606, 308, 92, 16);
             goals = Label(content, "", 14, 710, 306, 430, 17);
             status = Label(root, "", 24, 0, 1390, 66, 17);
             status.rectTransform.anchorMin = Vector2.zero; status.rectTransform.anchorMax = new Vector2(1, 0);

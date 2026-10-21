@@ -58,8 +58,8 @@ Shader "CellFusion/OrganicLevelBoard"
                 float seed = dot(cell, float2(1.73, 2.61));
                 delta += .007 * float2(sin(delta.y * 8 + _FlowTime * .65 + seed), cos(delta.x * 7 - _FlowTime * .5 + seed));
                 float2 rotated = float2(delta.x + delta.y, delta.y - delta.x) * .70710678;
-                float2 q = abs(rotated) - .27;
-                return length(max(q, 0)) + min(max(q.x, q.y), 0) - .13;
+                float2 q = abs(rotated) - .20;
+                return length(max(q, 0)) + min(max(q.x, q.y), 0) - .20;
             }
             void TerrainField(float2 p, out float distanceToTerrain, out float shadowDistance)
             {
@@ -110,9 +110,9 @@ Shader "CellFusion/OrganicLevelBoard"
                         if (count>0) center=lerp(source/count,cell,eased);
                     }
                     float clone = lerp(data.b, data.a, eased);
-                    float3 cellColor = lerp(float3(0.38 + min(cell.y,6) * 0.025,0.66,0.8 + min(cell.x,6) * 0.018), float3(0.32,0.48,0.96),clone);
-                    if (_StyledTerrain > .5) cellColor = lerp(float3(.37,.78,.88), float3(.43,.64,.91), clone);
-                    Merge(length(p-center)-(_StyledTerrain > .5 ? .43 : .48)*life, cellColor, d, tint);
+                    float3 cellColor = lerp(float3(1,.89,.55), float3(0.32,0.48,0.96),clone);
+                    if (_StyledTerrain > .5) cellColor = lerp(float3(1,.89,.55), float3(.43,.64,.91), clone);
+                    Merge(length(p-center)-.50*life, cellColor, d, tint);
                     float nucleusAlpha = data.r < data.g ? smoothstep(0,1,saturate((_Progress-0.35)/0.65)) : life;
                     nucleus = max(nucleus, exp(-dot(p-cell,p-cell)/(_StyledTerrain > .5 ? .04 : .012))*nucleusAlpha);
                 }
@@ -153,14 +153,8 @@ Shader "CellFusion/OrganicLevelBoard"
                     terrainColor += .035 * (1 - saturate(length(p-tile)*1.5));
                     if (ground.r > .25 && ground.r < .75) terrainColor = lerp(terrainColor, float3(.43,.47,.57), .65);
                     terrainColor = lerp(terrainColor, float3(.60,.82,.70), influence * (1-inside) * .65);
-                    float3 cellBody = lerp(tint, float3(.78,.88,.97), .18);
-                    float3 litTerrain = lerp(terrainColor, cellBody, smoothstep(0,.25,-d) * .82);
-                    litTerrain = lerp(litTerrain, float3(.72,.65,1), nucleus * .55);
-                    float playerGlow = exp(-dot(p-_Player.xy,p-_Player.xy)/.065);
-                    float playerBody = 1-smoothstep(-aa,aa,length(p-_Player.xy)-_Player.z);
-                    litTerrain = lerp(litTerrain, float3(1,.95,.94), playerBody * .95);
-                    litTerrain = lerp(litTerrain, float3(.99,.6,.66), playerGlow * .85);
-                    litTerrain = lerp(litTerrain, float3(.9,.87,1), rim * .24);
+                    // Cells are a separate foreground surface, never clipped by terrain.
+                    float3 litTerrain = terrainColor;
                     if (ground.g > .5) litTerrain = lerp(litTerrain, float3(.83,.64,.34), ring * .9);
                     if (ground.b > .5) litTerrain = lerp(litTerrain, float3(.65,.52,.81), ring * .85);
                     float outline = 1-smoothstep(.012,.012+terrainAA,abs(terrainD+.035));
@@ -168,6 +162,17 @@ Shader "CellFusion/OrganicLevelBoard"
                     alpha = terrainAlpha + shadow * (1-terrainAlpha);
                     float3 shadowColor = float3(.28,.32,.39);
                     color = lerp(shadowColor, litTerrain, terrainAlpha / max(alpha,.001));
+                    float3 cellSurface = lerp(tint, float3(1,.98,.88), .12);
+                    cellSurface = lerp(cellSurface, float3(1,.81,.39), nucleus * .35);
+                    float playerGlow = exp(-dot(p-_Player.xy,p-_Player.xy)/.065);
+                    float playerBody = 1-smoothstep(-aa,aa,length(p-_Player.xy)-_Player.z);
+                    cellSurface = lerp(cellSurface, float3(1,.95,.94), playerBody * .95);
+                    cellSurface = lerp(cellSurface, float3(.99,.6,.66), playerGlow * .85);
+                    cellSurface = lerp(cellSurface, float3(1,.97,.84), rim * .28);
+                    float cellAlpha = saturate(inside + halo * .10);
+                    float combinedAlpha = cellAlpha + alpha * (1-cellAlpha);
+                    color = (cellSurface * cellAlpha + color * alpha * (1-cellAlpha)) / max(combinedAlpha,.001);
+                    alpha = combinedAlpha;
                     // The reference palette is authored in display space. Avoid washing it out in Linear projects.
                     #ifndef UNITY_COLORSPACE_GAMMA
                     color = GammaToLinearSpace(color);

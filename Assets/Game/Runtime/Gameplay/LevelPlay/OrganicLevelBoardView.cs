@@ -92,7 +92,7 @@ namespace Game.Runtime.Gameplay.LevelPlay
             float t = duration <= 0 ? 1 : Mathf.Clamp01(elapsed/duration);
             var player = Vector2.Lerp(playerFrom,playerTo,Mathf.SmoothStep(0,1,t));
             material.SetFloat("_Progress",t); material.SetFloat("_Fusion",fusion);
-            material.SetVector("_Player",new Vector4(player.x,player.y,.46f,0));
+            material.SetVector("_Player",new Vector4(player.x,player.y,.50f,0));
             material.SetVector("_PlayerPrevious",new Vector4(playerFrom.x,playerFrom.y,0,0));
             material.SetVector("_PlayerTail",new Vector4(playerFrom.x,playerFrom.y,playerFrom != playerTo ? (1-t)*.4f : 0,0));
         }
