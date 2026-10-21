@@ -56,7 +56,7 @@ Shader "CellFusion/OrganicLevelBoard"
             float TerrainShape(float2 delta, float2 cell)
             {
                 float seed = dot(cell, float2(1.73, 2.61));
-                delta += .007 * float2(sin(delta.y * 8 + _FlowTime * .65 + seed), cos(delta.x * 7 - _FlowTime * .5 + seed));
+                delta += .025 * float2(sin(delta.y * 8 + _FlowTime * .65 + seed), cos(delta.x * 7 - _FlowTime * .5 + seed));
                 float2 rotated = float2(delta.x + delta.y, delta.y - delta.x) * .70710678;
                 float2 q = abs(rotated) - .20;
                 return length(max(q, 0)) + min(max(q.x, q.y), 0) - .20;
