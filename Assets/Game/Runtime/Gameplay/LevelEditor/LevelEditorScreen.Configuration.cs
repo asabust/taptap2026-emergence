@@ -47,7 +47,7 @@ namespace Game.Runtime.Gameplay.LevelEditor
             Label(content, "关卡配置", 16, 12, 280, 28, 20);
             lonelyToggle = RuleToggle(content, "孤独死亡（邻居 < 2）", 52);
             crowdedToggle = RuleToggle(content, "拥挤死亡（邻居 > 3）", 92);
-            Label(content, "未触发死亡规则则保持存活。\n两项可都关闭；没有自动繁殖。", 16, 132, 280, 54, 15);
+            Label(content, "未触发死亡规则则保持存活。\n玩家周围八格空地：3 邻居繁殖。", 16, 132, 280, 54, 15);
             Label(content, "存活分身上限", 16, 200, 158, 32, 17);
             cloneInput = TextInput(content, 178, 198, 118, "0", true);
             Label(content, "迭代轮数上限", 16, 246, 158, 32, 17);

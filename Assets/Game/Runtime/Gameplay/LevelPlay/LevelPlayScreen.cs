@@ -356,8 +356,8 @@ namespace Game.Runtime.Gameplay.LevelPlay
                 case "Cloning is disabled in this level.": return "本关分身额度为 0，不能创建分身。";
                 case "Clone limit reached; recycle a clone first.": return "分身已满，请先回收一个。";
                 case "No adjacent empty floor is available.": return "玩家周围没有可放置分身的空地。";
-                case "Select an adjacent empty floor tile.": return "请选择黄色高亮的相邻空地，或按 Esc 取消。";
-                case "Select an adjacent empty floor tile within the clone limit.": return "该位置不能放置分身，请选择黄色高亮空地。";
+                case "Select an adjacent empty floor tile.": return "请选择黄色高亮、地形连通的相邻空地，或按 Esc 取消。";
+                case "Select an adjacent empty floor tile within the clone limit.": return "该位置不能放置分身：须为空地、地形连通且在玩家周围八格内。";
                 case "Clone created.": return "已创建分身，返回移动模式。";
                 case "No living clones to recycle.": return "当前没有可回收的存活分身。";
                 case "Select a living clone anywhere on the board.": return "请选择棋盘任意位置的黄色分身，或按 Esc 取消。";

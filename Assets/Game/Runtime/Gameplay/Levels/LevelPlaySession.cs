@@ -84,7 +84,47 @@ namespace Game.Runtime.Gameplay.Levels
         {
             if (Status != LevelPlayStatus.Playing || LivingCloneCount >= CloneLimit || !IsFloor(x, y)) return false;
             int dx = x - state.PlayerX, dy = y - state.PlayerY;
-            return dx >= -1 && dx <= 1 && dy >= -1 && dy <= 1 && (dx != 0 || dy != 0) && CellAt(x, y) == null;
+            return dx >= -1 && dx <= 1 && dy >= -1 && dy <= 1 && (dx != 0 || dy != 0) && CellAt(x, y) == null && IsTerrainReachable(x, y);
+        }
+
+        // The influence area is geometric: births do not require a walking route.
+        public bool IsInPlayerNeighbourhood(int x, int y)
+        {
+            int dx = x - state.PlayerX, dy = y - state.PlayerY;
+            return IsFloor(x, y) && dx >= -1 && dx <= 1 && dy >= -1 && dy <= 1 && (dx != 0 || dy != 0);
+        }
+
+        // Static terrain connectivity; temporary living-cell occupancy is deliberately ignored.
+        public bool IsTerrainReachable(int x, int y)
+        {
+            if (!IsFloor(x, y)) return false;
+            var visited = new bool[floor.GetLength(0), floor.GetLength(1)];
+            var queue = new Queue<GridPosition>();
+            queue.Enqueue(new GridPosition { x = state.PlayerX, y = state.PlayerY });
+            visited[state.PlayerX, state.PlayerY] = true;
+            int[] steps = { 1, 0, -1, 0, 1 };
+            while (queue.Count > 0)
+            {
+                var p = queue.Dequeue();
+                if (p.x == x && p.y == y) return true;
+                for (int i = 0; i < 4; i++)
+                {
+                    int nx = p.x + steps[i], ny = p.y + steps[i + 1];
+                    if (!IsFloor(nx, ny) || visited[nx, ny]) continue;
+                    visited[nx, ny] = true;
+                    queue.Enqueue(new GridPosition { x = nx, y = ny });
+                }
+            }
+            return false;
+        }
+
+        private int CountNeighbours(bool[,] occupied, int cx, int cy)
+        {
+            int count = 0;
+            for (int dx = -1; dx <= 1; dx++)
+                for (int dy = -1; dy <= 1; dy++)
+                    if ((dx != 0 || dy != 0) && Inside(cx + dx, cy + dy) && occupied[cx + dx, cy + dy]) count++;
+            return count;
         }
 
         public bool TryCreateClone(int x, int y, out string message)
@@ -159,15 +199,18 @@ namespace Game.Runtime.Gameplay.Levels
             var survivors = new List<LivingCellState>();
             foreach (var cell in state.Cells)
             {
-                int neighbours = 0;
-                for (int dx = -1; dx <= 1; dx++)
-                    for (int dy = -1; dy <= 1; dy++)
-                    {
-                        int x = cell.X + dx, y = cell.Y + dy;
-                        if ((dx != 0 || dy != 0) && Inside(x, y) && occupied[x, y]) neighbours++;
-                    }
+                int neighbours = CountNeighbours(occupied, cell.X, cell.Y);
                 if (!(lonelyDeath && neighbours < 2) && !(crowdedDeath && neighbours > 3)) survivors.Add(cell);
             }
+            // Birth candidates must have been empty before the iteration. Deaths and
+            // other births in this round cannot change neighbour counts or eligibility.
+            for (int dx = -1; dx <= 1; dx++)
+                for (int dy = -1; dy <= 1; dy++)
+                {
+                    int x = state.PlayerX + dx, y = state.PlayerY + dy;
+                    if (IsInPlayerNeighbourhood(x, y) && !occupied[x, y] && CountNeighbours(occupied, x, y) == 3)
+                        survivors.Add(new LivingCellState { X = x, Y = y, IsClone = false });
+                }
             state.Cells = survivors;
             state.Iteration++;
             if (history.Count == HistoryCapacity) history.RemoveAt(0);

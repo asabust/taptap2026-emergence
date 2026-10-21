@@ -163,7 +163,7 @@ namespace Game.Runtime.Gameplay.LevelPlay
             bool lonely = definition.rules.Any(r => r.id == LevelIds.LonelyDeath), crowded = definition.rules.Any(r => r.id == LevelIds.CrowdedDeath);
             string text = "孤独死亡：" + (lonely ? "开启，少于 2 个邻居时死亡" : "关闭")
                 + "\n拥挤死亡：" + (crowded ? "开启，多于 3 个邻居时死亡" : "关闭")
-                + "\n\n每次演化同时结算八邻域；不会自动生成细胞。\n玩家参与邻居计算，自身不会死亡。\n\n分身：玩家周围八格的空地，名额为同时存活数。\n回收：可选棋盘任意存活分身，不能回收初始细胞。\n\nSpace 演化 · B 分身 · Z 撤销上一轮 · R 重新开始\n方向键单次移动 · Esc 取消选择或暂停\n\n本关目标\n" + DescribeGoals(Session.State);
+                + "\n\n每次演化同时结算八邻域；仅玩家周围八格的空地在恰有 3 个邻居时繁殖普通细胞。\n玩家参与邻居计算，自身不会死亡。\n\n分身：玩家周围八格、与玩家四向地形连通的空地，名额为同时存活数。\n绿色地块提示影响范围；墙和细胞本体不变色。\n回收：可选棋盘任意存活分身，不能回收初始细胞。\n\nSpace 演化 · B 分身 · Z 撤销上一轮 · R 重新开始\n方向键单次移动 · Esc 取消选择或暂停\n\n本关目标\n" + DescribeGoals(Session.State);
             var scrollRect = Box(window, "Rule Scroll", Color.clear); Place(scrollRect,36,94,688,440);
             var scroll = scrollRect.gameObject.AddComponent<ScrollRect>(); scroll.horizontal=false;
             var viewport = Box(scrollRect,"Viewport",Color.clear); Stretch(viewport); viewport.gameObject.AddComponent<RectMask2D>();

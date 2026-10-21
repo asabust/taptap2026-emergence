@@ -36,6 +36,7 @@ Shader "CellFusion/OrganicLevelBoard"
             #include "UnityUI.cginc"
             sampler2D _LifeTex, _BoardTex;
             float4 _GridSize, _Player, _PlayerTail, _PlayerPrevious, _Color, _ClipRect, _ViewBounds;
+            float4 _InfluencePlayer;
             float _Fusion, _Progress, _StyledTerrain, _BoardPadding, _FlowTime;
             struct Attributes { float4 vertex : POSITION; float2 uv : TEXCOORD0; float4 color : COLOR; };
             struct Varyings { float4 vertex : SV_POSITION; float2 uv : TEXCOORD0; float4 color : COLOR; float4 local : TEXCOORD1; };
@@ -125,6 +126,9 @@ Shader "CellFusion/OrganicLevelBoard"
                 float2 gd = abs(frac(p+0.5)-0.5);
                 float grid = smoothstep(0.49-max(fwidth(p.x),fwidth(p.y)),0.49,max(gd.x,gd.y));
                 if (ground.r > 0.75) bg = lerp(bg,float3(0.66,0.78,0.75),grid*0.5);
+                float2 influenceDelta = abs(tile - _InfluencePlayer.xy);
+                float influence = ground.r > .75 && max(influenceDelta.x,influenceDelta.y) <= 1 && max(influenceDelta.x,influenceDelta.y) > .5 ? 1 : 0;
+                bg = lerp(bg, float3(.66,.86,.77), influence * (1-inside) * .65);
                 float3 body = lerp(tint,float3(0.88,0.94,0.9),0.38);
                 float3 color = lerp(bg,body,inside*0.65);
                 color = lerp(color,tint,halo*0.18);
@@ -148,6 +152,7 @@ Shader "CellFusion/OrganicLevelBoard"
                     float3 terrainColor = lerp(float3(.75,.82,.86), float3(.58,.59,.72), gradient);
                     terrainColor += .035 * (1 - saturate(length(p-tile)*1.5));
                     if (ground.r > .25 && ground.r < .75) terrainColor = lerp(terrainColor, float3(.43,.47,.57), .65);
+                    terrainColor = lerp(terrainColor, float3(.60,.82,.70), influence * (1-inside) * .65);
                     float3 cellBody = lerp(tint, float3(.78,.88,.97), .18);
                     float3 litTerrain = lerp(terrainColor, cellBody, smoothstep(0,.25,-d) * .82);
                     litTerrain = lerp(litTerrain, float3(.72,.65,1), nucleus * .55);

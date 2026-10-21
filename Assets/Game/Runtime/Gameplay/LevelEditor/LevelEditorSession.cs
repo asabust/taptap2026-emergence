@@ -135,7 +135,7 @@ namespace Game.Runtime.Gameplay.LevelEditor
             Draft.rules.Clear();
             if (lonely) Draft.rules.Add(new LevelRule { id = LevelIds.LonelyDeath });
             if (crowded) Draft.rules.Add(new LevelRule { id = LevelIds.CrowdedDeath });
-            message = lonely || crowded ? "配置已应用。" : "配置已应用：两种死亡规则均关闭，迭代不会改变细胞。";
+            message = lonely || crowded ? "配置已应用。" : "配置已应用：两种死亡规则均关闭，仍可在玩家周围繁殖。";
             Changed?.Invoke();
             return true;
         }

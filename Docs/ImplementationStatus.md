@@ -358,3 +358,14 @@ WebGL／Android 的 StreamingAssets 读取需要后续平台适配；`DeveloperD
 - Unity 中重新运行 Campaign Integration Checks，实际正式加载、通关回选关、下一关解锁／高亮及存档回读输出 PASS。
 
 待验证：Windows／WebGL 实包 Shader、不同窗口比例与 30×30 GPU 性能。本次只确认当前本机 Game 视图，正式美术效果仍可按用户反馈调整。
+
+
+## 2026-10-21：玩家邻域繁殖、分身可达限制与范围提示
+
+- 共用 `LevelPlaySession.TryIterate` 按旧状态同步执行死亡与繁殖。仅玩家八邻域有效空地恰有三个邻居时诞生普通细胞；玩家与分身参与计数，新生细胞 `IsClone=false`，不占名额，不受死亡开关或分身额度控制。本轮死亡不立即重生，本轮出生不连锁影响计数。
+- `CanPlaceCloneAt` 追加四向地形连通性；墙、无效格阻断，普通细胞的临时占位不阻断连通（目标本身仍必须为空）。支持经远处绕行通路抵达的邻格。新增 `IsTerrainReachable` 与 `IsInPlayerNeighbourhood` 查询接口，不依赖 Unity。
+- `OrganicLevelBoardView` 上传独立 `_InfluencePlayer`，Shader 对玩家八邻域有效地块做柔绿染色，排除中心、墙、无效格，遮罩细胞本体；正式菱形皮肤和编辑器试玩旧皮肤共用此提示。黄色选择边框仍仅显示可放分身位置。提示表示影响范围，不保证繁殖条件、连通或分身额度满足。
+- 编辑器配置说明、无死亡规则反馈、正式规则说明、GDD v0.30 和阶段计划已更新；没有增加繁殖开关或改动关卡 JSON 格式，旧关卡直接采用新规则。
+- 验证：292 项纯逻辑检查通过（含新增 15 项规则回归）；Editor/Player 编译检查通过；Unity 2022.3.62f3 Metal Shader 检查通过；Gameplay 实际 Play 验证移动与范围颜色更新、迭代出现新普通细胞，执行撤销后停止 Play。未重新打包 Windows/macOS/WebGL；未逐关验证旧内容在新规则下的解法。编辑器试玩使用同一规则与棋盘组件，本轮未另做编辑器 UI 手动全流程。
+- 测试入口：`bash Docs/Tests/run-level-data-checks.sh`、`python3 Docs/Tests/check-level-editor-compilation.py`；Unity 打开 LevelEditor → 试玩当前草稿，或直接运行 Gameplay。
+- 本轮开始前已有字体、TitleScene 与 .DS_Store 改动，保留且不纳入本功能提交。

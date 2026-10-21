@@ -94,15 +94,51 @@ namespace Game.Editor
             s = new LevelPlaySession(level); before = Snapshot(s); Iterate(s);
             Check(s.State.Cells.Count == 5 && s.Iteration == 1 && s.State.PlayerX == 0, "both rules off, iteration still advances");
             s = new LevelPlaySession(Board(4, 4, 1, 2, 2, 1, 3, 2)); Iterate(s);
-            Check(!Has(s, 2, 2), "three neighbours never produce birth");
+            Check(!Has(s, 2, 2), "three neighbours outside player area do not produce birth");
             s = new LevelPlaySession(Board(4, 4, 1, 2, 2, 2, 3, 2)); Iterate(s);
-            Check(s.State.Cells.Count == 1 && Has(s, 2, 2), "synchronous deaths preserve centre from previous-state neighbours");
+            Check(Has(s, 2, 2) && !Has(s, 1, 2) && !Has(s, 3, 2), "synchronous deaths preserve centre from previous-state neighbours");
             s = new LevelPlaySession(Board(4, 4, 0, 0, 4, 0, 0, 4)); Iterate(s);
             Check(s.State.Cells.Count == 0, "opposite edges do not contribute neighbours");
             s = new LevelPlaySession(Board()); Iterate(s);
             Check(s.State.PlayerX == 0 && s.State.PlayerY == 0 && s.State.Cells.Count == 0, "isolated player never dies");
             s = new LevelPlaySession(Board(2, 2, 1, 1, 1, 2, 1, 3, 2, 1, 2, 3, 3, 1, 3, 2, 3, 3)); Iterate(s);
             Check(s.State.PlayerX == 2 && s.State.PlayerY == 2, "crowded player never dies");
+
+            s = new LevelPlaySession(Board(2, 2, 0, 0, 0, 1)); Iterate(s);
+            Check(Has(s, 1, 1) && !s.State.Cells.Single(c => c.X == 1 && c.Y == 1).IsClone
+                && s.LivingCloneCount == 0, "local birth counts player and produces ordinary cell even with zero surviving parents");
+            Check(!Has(s, 1, 0), "birth requires exactly three neighbours");
+            Check(s.TryUndo(out _) && !Has(s, 1, 1) && Has(s, 0, 0), "undo restores pre-birth cells");
+            s.Reset(); Check(!Has(s, 1, 1) && s.Iteration == 0, "reset removes births");
+            level = Board(2, 2, 0, 0, 0, 1); level.rules.Clear(); level.cloneLimit = 0;
+            s = new LevelPlaySession(level); Iterate(s);
+            Check(Has(s, 1, 1) && s.LivingCloneCount == 0, "birth independent of death switches and clone limit");
+            level = Board(2, 2, 0, 0, 0, 1); level.tiles.Find(t => t.x == 1 && t.y == 1).type = LevelIds.Wall;
+            s = new LevelPlaySession(level); Iterate(s); Check(!Has(s, 1, 1), "walls never give birth");
+            level.tiles.RemoveAll(t => t.x == 1 && t.y == 1);
+            s = new LevelPlaySession(level); Iterate(s); Check(!Has(s, 1, 1), "void never gives birth");
+            level = Board(1, 1);
+            level.tiles.Find(t => t.x == 2 && t.y == 1).type = LevelIds.Wall;
+            level.tiles.Find(t => t.x == 1 && t.y == 2).type = LevelIds.Wall;
+            level.tiles.Find(t => t.x == 3 && t.y == 2).type = LevelIds.Wall;
+            level.tiles.Find(t => t.x == 2 && t.y == 3).type = LevelIds.Wall;
+            s = new LevelPlaySession(level);
+            Check(!s.CanPlaceCloneAt(2, 2) && s.IsInPlayerNeighbourhood(2, 2), "sealed diagonal cannot clone but remains in birth influence");
+            Check(!s.IsInPlayerNeighbourhood(2, 1) && !s.IsInPlayerNeighbourhood(1, 1), "influence excludes walls and player centre");
+            level.tiles.Find(t => t.x == 3 && t.y == 2).type = LevelIds.Floor;
+            s = new LevelPlaySession(level); Check(s.CanPlaceCloneAt(2, 2), "long terrain route permits adjacent clone");
+            level.cells.Add(new LevelCell { x = 3, y = 2, type = LevelIds.Normal });
+            s = new LevelPlaySession(level); Check(s.CanPlaceCloneAt(2, 2), "temporary cell blocker does not disconnect terrain");
+            s.TryMove(-1, 0, out _);
+            Check(!s.IsInPlayerNeighbourhood(2, 2) && s.IsInPlayerNeighbourhood(0, 2), "influence follows movement");
+
+            s = new LevelPlaySession(Board(2, 2, 0, 0)); Iterate(s);
+            Check(!Has(s, 1, 1), "two neighbours do not produce birth");
+            s = new LevelPlaySession(Board(2, 2, 0, 0, 0, 1, 1, 0)); Iterate(s);
+            Check(!Has(s, 1, 1), "four neighbours do not produce birth");
+            s = new LevelPlaySession(Board(2, 2, 0, 0, 0, 1, 1, 1)); Iterate(s);
+            Check(Has(s, 1, 1) && !s.State.Cells.Single(c => c.X == 1 && c.Y == 1).IsClone,
+                "occupied three-neighbour cell survives without duplicate birth");
 
             level = Board(2, 2, 1, 2); level.tiles.Find(t => t.x == 2 && t.y == 3).type = LevelIds.Wall;
             level.tiles.RemoveAll(t => t.x == 3 && t.y == 2); s = new LevelPlaySession(level);

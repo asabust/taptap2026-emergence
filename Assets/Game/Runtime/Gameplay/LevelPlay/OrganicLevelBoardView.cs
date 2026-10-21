@@ -74,6 +74,7 @@ namespace Game.Runtime.Gameplay.LevelPlay
             if (session.Mode == LevelInteractionMode.RecycleClone)
                 foreach (var cell in state.Cells) if(cell.IsClone) boardPixels[cell.X+cell.Y*width].a = 1;
             boardTexture.SetPixels(boardPixels); boardTexture.Apply(false,false);
+            material.SetVector("_InfluencePlayer", new Vector4(state.PlayerX, state.PlayerY, 0, 0));
             Upload();
         }
 
