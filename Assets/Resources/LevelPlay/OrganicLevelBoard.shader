@@ -110,8 +110,8 @@ Shader "CellFusion/OrganicLevelBoard"
                         if (count>0) center=lerp(source/count,cell,eased);
                     }
                     float clone = lerp(data.b, data.a, eased);
-                    float3 cellColor = lerp(float3(1,.89,.55), float3(0.32,0.48,0.96),clone);
-                    if (_StyledTerrain > .5) cellColor = lerp(float3(1,.89,.55), float3(.43,.64,.91), clone);
+                    float3 cellColor = lerp(float3(.54,.79,.92), float3(0.32,0.48,0.96),clone);
+                    if (_StyledTerrain > .5) cellColor = lerp(float3(.54,.79,.92), float3(.43,.48,.85), clone);
                     Merge(length(p-center)-.50*life, cellColor, d, tint);
                     float nucleusAlpha = data.r < data.g ? smoothstep(0,1,saturate((_Progress-0.35)/0.65)) : life;
                     nucleus = max(nucleus, exp(-dot(p-cell,p-cell)/(_StyledTerrain > .5 ? .04 : .012))*nucleusAlpha);
@@ -128,7 +128,7 @@ Shader "CellFusion/OrganicLevelBoard"
                 if (ground.r > 0.75) bg = lerp(bg,float3(0.66,0.78,0.75),grid*0.5);
                 float2 influenceDelta = abs(tile - _InfluencePlayer.xy);
                 float influence = ground.r > .75 && max(influenceDelta.x,influenceDelta.y) <= 1 && max(influenceDelta.x,influenceDelta.y) > .5 ? 1 : 0;
-                bg = lerp(bg, float3(.66,.86,.77), influence * (1-inside) * .65);
+                bg = lerp(bg, float3(1,1,1), influence * (1-inside) * .38);
                 float3 body = lerp(tint,float3(0.88,0.94,0.9),0.38);
                 float3 color = lerp(bg,body,inside*0.65);
                 color = lerp(color,tint,halo*0.18);
@@ -152,7 +152,7 @@ Shader "CellFusion/OrganicLevelBoard"
                     float3 terrainColor = lerp(float3(.75,.82,.86), float3(.58,.59,.72), gradient);
                     terrainColor += .035 * (1 - saturate(length(p-tile)*1.5));
                     if (ground.r > .25 && ground.r < .75) terrainColor = lerp(terrainColor, float3(.43,.47,.57), .65);
-                    terrainColor = lerp(terrainColor, float3(.60,.82,.70), influence * (1-inside) * .65);
+                    terrainColor = lerp(terrainColor, float3(1,1,1), influence * (1-inside) * .40);
                     // Cells are a separate foreground surface, never clipped by terrain.
                     float3 litTerrain = terrainColor;
                     if (ground.g > .5) litTerrain = lerp(litTerrain, float3(.83,.64,.34), ring * .9);
@@ -162,13 +162,13 @@ Shader "CellFusion/OrganicLevelBoard"
                     alpha = terrainAlpha + shadow * (1-terrainAlpha);
                     float3 shadowColor = float3(.28,.32,.39);
                     color = lerp(shadowColor, litTerrain, terrainAlpha / max(alpha,.001));
-                    float3 cellSurface = lerp(tint, float3(1,.98,.88), .12);
-                    cellSurface = lerp(cellSurface, float3(1,.81,.39), nucleus * .35);
+                    float3 cellSurface = lerp(tint, float3(.86,.94,1), .12);
+                    cellSurface = lerp(cellSurface, float3(.35,.42,.68), nucleus * .35);
                     float playerGlow = exp(-dot(p-_Player.xy,p-_Player.xy)/.065);
                     float playerBody = 1-smoothstep(-aa,aa,length(p-_Player.xy)-_Player.z);
                     cellSurface = lerp(cellSurface, float3(1,.95,.94), playerBody * .95);
                     cellSurface = lerp(cellSurface, float3(.99,.6,.66), playerGlow * .85);
-                    cellSurface = lerp(cellSurface, float3(1,.97,.84), rim * .28);
+                    cellSurface = lerp(cellSurface, float3(.91,.95,1), rim * .28);
                     float cellAlpha = saturate(inside + halo * .10);
                     float combinedAlpha = cellAlpha + alpha * (1-cellAlpha);
                     color = (cellSurface * cellAlpha + color * alpha * (1-cellAlpha)) / max(combinedAlpha,.001);

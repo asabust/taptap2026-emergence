@@ -25,6 +25,7 @@ namespace Game.Runtime.Gameplay.LevelEditor
             };
             next.rules.Add(new LevelRule { id = LevelIds.LonelyDeath });
             next.rules.Add(new LevelRule { id = LevelIds.CrowdedDeath });
+            next.rules.Add(new LevelRule { id = LevelIds.LocalBirth });
             for (int y = 0; y < height; y++) for (int x = 0; x < width; x++)
                 next.tiles.Add(new LevelTile { x = x, y = y, type = LevelIds.Floor });
             Draft = next;
@@ -125,6 +126,9 @@ namespace Game.Runtime.Gameplay.LevelEditor
         }
 
         public bool TryConfigure(bool lonely, bool crowded, string cloneText, string iterationText, out string message)
+            => TryConfigure(lonely, crowded, Draft.rules.Exists(r => r.id == LevelIds.LocalBirth), cloneText, iterationText, out message);
+
+        public bool TryConfigure(bool lonely, bool crowded, bool birth, string cloneText, string iterationText, out string message)
         {
             int clones = 0, iterations = 1000;
             if ((!string.IsNullOrWhiteSpace(cloneText) && !int.TryParse(cloneText, out clones)) || clones < 0)
@@ -135,7 +139,8 @@ namespace Game.Runtime.Gameplay.LevelEditor
             Draft.rules.Clear();
             if (lonely) Draft.rules.Add(new LevelRule { id = LevelIds.LonelyDeath });
             if (crowded) Draft.rules.Add(new LevelRule { id = LevelIds.CrowdedDeath });
-            message = lonely || crowded ? "配置已应用。" : "配置已应用：两种死亡规则均关闭，仍可在玩家周围繁殖。";
+            if (birth) Draft.rules.Add(new LevelRule { id = LevelIds.LocalBirth });
+            message = lonely || crowded || birth ? "配置已应用。" : "配置已应用：演化规则全部关闭，迭代不会改变细胞。";
             Changed?.Invoke();
             return true;
         }

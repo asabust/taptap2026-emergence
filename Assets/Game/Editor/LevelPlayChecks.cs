@@ -22,7 +22,7 @@ namespace Game.Editor
             var level = new LevelDefinition
             {
                 id = "play_checks", grid = new GridSize { width = 5, height = 5 }, cloneLimit = 3,
-                rules = new List<LevelRule> { new LevelRule { id = LevelIds.LonelyDeath }, new LevelRule { id = LevelIds.CrowdedDeath } }
+                rules = new List<LevelRule> { new LevelRule { id = LevelIds.LonelyDeath }, new LevelRule { id = LevelIds.CrowdedDeath }, new LevelRule { id = LevelIds.LocalBirth } }
             };
             for (int x = 0; x < 5; x++) for (int y = 0; y < 5; y++)
                 level.tiles.Add(new LevelTile { x = x, y = y, type = LevelIds.Floor });
@@ -104,13 +104,18 @@ namespace Game.Editor
             s = new LevelPlaySession(Board(2, 2, 1, 1, 1, 2, 1, 3, 2, 1, 2, 3, 3, 1, 3, 2, 3, 3)); Iterate(s);
             Check(s.State.PlayerX == 2 && s.State.PlayerY == 2, "crowded player never dies");
 
+            level = Board(2, 2, 0, 0, 0, 1); level.rules.RemoveAll(r => r.id == LevelIds.LocalBirth);
+            s = new LevelPlaySession(level); Iterate(s);
+            Check(!Has(s, 1, 1), "disabled birth keeps eligible local empty tile empty");
+            s = new LevelPlaySession(LevelJson.Deserialize(LevelJson.Serialize(level))); Iterate(s);
+            Check(!Has(s, 1, 1), "disabled birth preserved by JSON round trip");
             s = new LevelPlaySession(Board(2, 2, 0, 0, 0, 1)); Iterate(s);
             Check(Has(s, 1, 1) && !s.State.Cells.Single(c => c.X == 1 && c.Y == 1).IsClone
                 && s.LivingCloneCount == 0, "local birth counts player and produces ordinary cell even with zero surviving parents");
             Check(!Has(s, 1, 0), "birth requires exactly three neighbours");
             Check(s.TryUndo(out _) && !Has(s, 1, 1) && Has(s, 0, 0), "undo restores pre-birth cells");
             s.Reset(); Check(!Has(s, 1, 1) && s.Iteration == 0, "reset removes births");
-            level = Board(2, 2, 0, 0, 0, 1); level.rules.Clear(); level.cloneLimit = 0;
+            level = Board(2, 2, 0, 0, 0, 1); level.rules.Clear(); level.rules.Add(new LevelRule { id = LevelIds.LocalBirth }); level.cloneLimit = 0;
             s = new LevelPlaySession(level); Iterate(s);
             Check(Has(s, 1, 1) && s.LivingCloneCount == 0, "birth independent of death switches and clone limit");
             level = Board(2, 2, 0, 0, 0, 1); level.tiles.Find(t => t.x == 1 && t.y == 1).type = LevelIds.Wall;

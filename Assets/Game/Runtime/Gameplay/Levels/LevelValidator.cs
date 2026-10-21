@@ -33,11 +33,11 @@ namespace Game.Runtime.Gameplay.Levels
             if (level.rules == null) result.Errors.Add("Rules list is missing.");
             else foreach (var rule in level.rules)
             {
-                if (rule == null || (rule.id != LevelIds.LonelyDeath && rule.id != LevelIds.CrowdedDeath))
+                if (rule == null || (rule.id != LevelIds.LonelyDeath && rule.id != LevelIds.CrowdedDeath && rule.id != LevelIds.LocalBirth))
                     result.Errors.Add("Unknown or missing rule.");
                 else if (!rules.Add(rule.id)) result.Errors.Add("Duplicate rule: " + rule.id);
             }
-            if (rules.Count == 0) result.Warnings.Add("Both death rules are disabled; iteration will not change cells.");
+            if (rules.Count == 0) result.Warnings.Add("All evolution rules are disabled; iteration will not change cells.");
             if (level.tiles == null) result.Errors.Add("Tiles list is missing.");
             else foreach (var tile in level.tiles)
             {

@@ -22,7 +22,7 @@ namespace Game.Editor
         {
             checks = 0;
             var session = new LevelEditorSession(4, 4);
-            Check(session.TryConfigure(false, false, "", "", out _) && session.Draft.cloneLimit == 0
+            Check(session.TryConfigure(false, false, false, "", "", out _) && session.Draft.cloneLimit == 0
                 && session.Draft.iterationLimit == 1000 && session.Draft.rules.Count == 0, "empty defaults, both rules off");
             string before = LevelJson.Serialize(session.Draft);
             Check(!session.TryConfigure(true, true, "-1", "10", out _) && LevelJson.Serialize(session.Draft) == before, "negative clone rejects without mutation");
@@ -30,6 +30,15 @@ namespace Game.Editor
             Check(!session.TryConfigure(true, true, "x", "10", out _), "nonnumeric clone");
             Check(!session.TryConfigure(true, true, "1", "2147483648", out _), "overflow limit");
             Check(session.TryConfigure(true, false, "3", "5", out _) && session.Draft.rules.Single().id == LevelIds.LonelyDeath, "one rule, quotas");
+            Check(session.TryConfigure(false, false, true, "3", "5", out _)
+                && session.Draft.rules.Single().id == LevelIds.LocalBirth, "birth independently enabled");
+            Check(LevelJson.Deserialize(LevelJson.Serialize(session.Draft)).rules.Single().id == LevelIds.LocalBirth,
+                "birth saved and reloaded");
+            before = LevelJson.Serialize(session.Draft);
+            Check(!session.TryConfigure(false, false, false, "-1", "5", out _)
+                && LevelJson.Serialize(session.Draft) == before, "invalid inputs preserve birth switch");
+            Check(session.TryConfigure(true, false, false, "3", "5", out _)
+                && session.Draft.rules.All(r => r.id != LevelIds.LocalBirth), "birth independently disabled");
             int first = session.AddGoal(LevelIds.CoverPositions); Paint(session, 0, 0, LevelBrush.CellGoal);
             int second = session.AddGoal(LevelIds.CoverPositions); Paint(session, 1, 1, LevelBrush.CellGoal); Paint(session, 1, 1, LevelBrush.CellGoal);
             Check(session.Draft.winConditions.conditions[first].positions.Single().x == 0

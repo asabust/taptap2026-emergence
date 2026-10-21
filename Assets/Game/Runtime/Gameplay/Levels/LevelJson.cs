@@ -70,7 +70,7 @@ namespace Game.Runtime.Gameplay.Levels
             {
                 Fields(o, "id,parameters"); Text(o, "id");
                 string id = (string)o["id"];
-                if (id != LevelIds.LonelyDeath && id != LevelIds.CrowdedDeath)
+                if (id != LevelIds.LonelyDeath && id != LevelIds.CrowdedDeath && id != LevelIds.LocalBirth)
                     throw new FormatException("Unknown rule: " + id);
                 // GDD originally reserved parameters; the two current rules have fixed thresholds.
                 if (o["parameters"] != null &&

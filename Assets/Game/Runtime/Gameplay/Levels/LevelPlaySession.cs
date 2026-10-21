@@ -13,6 +13,7 @@ namespace Game.Runtime.Gameplay.Levels
         private readonly LevelDefinition definition;
         private readonly bool[,] floor;
         private readonly bool lonelyDeath;
+        private readonly bool localBirth;
         private readonly bool crowdedDeath;
         private LevelState state;
         private readonly LevelState initialState;
@@ -43,6 +44,7 @@ namespace Game.Runtime.Gameplay.Levels
                 floor[tile.x, tile.y] = tile.type == LevelIds.Floor;
             foreach (var rule in definition.rules)
             {
+                if (rule.id == LevelIds.LocalBirth) localBirth = true;
                 if (rule.id == LevelIds.LonelyDeath) lonelyDeath = true;
                 if (rule.id == LevelIds.CrowdedDeath) crowdedDeath = true;
             }
@@ -208,7 +210,7 @@ namespace Game.Runtime.Gameplay.Levels
                 for (int dy = -1; dy <= 1; dy++)
                 {
                     int x = state.PlayerX + dx, y = state.PlayerY + dy;
-                    if (IsInPlayerNeighbourhood(x, y) && !occupied[x, y] && CountNeighbours(occupied, x, y) == 3)
+                    if (localBirth && IsInPlayerNeighbourhood(x, y) && !occupied[x, y] && CountNeighbours(occupied, x, y) == 3)
                         survivors.Add(new LivingCellState { X = x, Y = y, IsClone = false });
                 }
             state.Cells = survivors;

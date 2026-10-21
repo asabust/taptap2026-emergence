@@ -51,6 +51,7 @@ namespace Game.Runtime.Data.Levels
         public const int SchemaVersion = 1;
         public const string Floor = "floor", Wall = "wall";
         public const string Normal = "normal", Player = "player";
+        public const string LocalBirth = "localBirth";
         public const string LonelyDeath = "lonelyDeath", CrowdedDeath = "crowdedDeath";
         public const string ActorAtPosition = "actorAtPosition";
         public const string CellCount = "livingCellCount";

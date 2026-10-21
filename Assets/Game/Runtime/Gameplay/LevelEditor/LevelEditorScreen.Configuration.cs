@@ -15,7 +15,7 @@ namespace Game.Runtime.Gameplay.LevelEditor
         private LevelEditorDocument document;
         private TMP_InputField idInput, nameInput, cloneInput, iterationInput, thresholdInput;
         private TMP_Dropdown filesDropdown, goalsDropdown, comparisonDropdown;
-        private Toggle lonelyToggle, crowdedToggle;
+        private Toggle lonelyToggle, crowdedToggle, birthToggle;
         private TextMeshProUGUI goalDetails, fileStatus;
         private GameObject countControls, positionControls, modal;
         private bool pendingSettings, pendingTarget, pendingFile;
@@ -43,7 +43,7 @@ namespace Game.Runtime.Gameplay.LevelEditor
             var panel = Box(root, "Configuration", 0, 110, 332, 690, Panel);
             panel.anchorMin = panel.anchorMax = new Vector2(1, 1); panel.pivot = new Vector2(1, 1);
             panel.anchoredPosition = new Vector2(-20, -110);
-            RectTransform content = ScrollArea(panel, 0, 0, 332, 690, 1150);
+            RectTransform content = ScrollArea(panel, 0, 0, 332, 690, 1194);
             Label(content, "关卡配置", 16, 12, 280, 28, 20);
             lonelyToggle = RuleToggle(content, "孤独死亡（邻居 < 2）", 52);
             crowdedToggle = RuleToggle(content, "拥挤死亡（邻居 > 3）", 92);
@@ -83,6 +83,11 @@ namespace Game.Runtime.Gameplay.LevelEditor
             Label(content, "G：角色终点 · T：普通细胞覆盖\nT 可有多个格子，须同时覆盖。\n玩家不计入细胞数量，分身计入。", 16, 856, 280, 84, 15);
             Label(content, "保存会应用当前规则、上限和数量输入。\n草稿可不完整，校验后再制作试玩。", 16, 956, 280, 74, 14);
             Button(content, "退出编辑器", 16, 1080, 280, 36, RequestQuit);
+            // Make room for the third rule without overlapping the remaining controls.
+            foreach (RectTransform child in content)
+                if (child.anchoredPosition.y <= -132) child.anchoredPosition += new Vector2(0, -44);
+            birthToggle = RuleToggle(content, "局部繁殖（邻居 = 3）", 132);
+            birthToggle.onValueChanged.AddListener(_ => { pendingSettings = true; RefreshFileStatus(); });
             ReadAllControls(); RefreshFileList();
         }
 
@@ -117,6 +122,7 @@ namespace Game.Runtime.Gameplay.LevelEditor
             iterationInput.SetTextWithoutNotify(Session.Draft.iterationLimit.ToString());
             lonelyToggle.SetIsOnWithoutNotify(Session.Draft.rules.Exists(r => r.id == LevelIds.LonelyDeath));
             crowdedToggle.SetIsOnWithoutNotify(Session.Draft.rules.Exists(r => r.id == LevelIds.CrowdedDeath));
+            birthToggle.SetIsOnWithoutNotify(Session.Draft.rules.Exists(r => r.id == LevelIds.LocalBirth));
             pendingSettings = pendingTarget = pendingFile = false;
             RefreshConfigurationView();
         }
@@ -158,7 +164,7 @@ namespace Game.Runtime.Gameplay.LevelEditor
         { return type == LevelIds.ActorAtPosition ? "角色位置" : type == LevelIds.CoverPositions ? "细胞覆盖" : "数量条件"; }
         private bool ApplySettingsInternal()
         {
-            if (!Session.TryConfigure(lonelyToggle.isOn, crowdedToggle.isOn, cloneInput.text, iterationInput.text, out var message))
+            if (!Session.TryConfigure(lonelyToggle.isOn, crowdedToggle.isOn, birthToggle.isOn, cloneInput.text, iterationInput.text, out var message))
             { SetStatus(message, true); return false; }
             pendingSettings = false;
             cloneInput.SetTextWithoutNotify(Session.Draft.cloneLimit.ToString());

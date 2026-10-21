@@ -23,9 +23,9 @@ namespace Game.Editor
         {
             checks=0;
 #if UNITY_5_3_OR_NEWER
-            string path=Path.Combine(Application.dataPath,"StreamingAssets/Levels/stage6_probe.json");
+            string path=Path.Combine(Application.dataPath,"../Docs/Tests/Fixtures/stage6_probe.json");
 #else
-            string path="Assets/StreamingAssets/Levels/stage6_probe.json";
+            string path="Docs/Tests/Fixtures/stage6_probe.json";
 #endif
             var fixture=LevelJson.Deserialize(File.ReadAllText(path));
             Check(LevelValidator.ValidateForPlay(fixture).CanPlay,"committed probe is valid");
