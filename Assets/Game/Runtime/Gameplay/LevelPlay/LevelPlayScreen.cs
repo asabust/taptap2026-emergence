@@ -22,6 +22,7 @@ namespace Game.Runtime.Gameplay.LevelPlay
         public bool loadOnStart = true;
         public bool showReturnToEditor;
         public bool formalGame;
+        public bool PresentationReady => board && Session != null && !renderFailed;
         public event Action ExitRequested;
         public event Action<string> VictoryReached;
         public LevelPlaySession Session { get; private set; }
@@ -64,7 +65,7 @@ namespace Game.Runtime.Gameplay.LevelPlay
             victoryReported = false;
             requests.Clear();
             initializedFrame = Time.frameCount;
-            if (status) status.text = GamePresentation ? "" : "方向键移动 · 空格迭代 · B 分身（Birth） · Z 撤销 · R 重置 · Esc 取消选择／暂停";
+            if (status) status.text = GamePresentation ? "" : "方向键移动 · 空格迭代 · B 分身（Birth） · N 回收 · Z 撤销 · R 重置 · Esc 取消选择／暂停";
             if (board) Refresh(false);
         }
 
@@ -93,6 +94,7 @@ namespace Game.Runtime.Gameplay.LevelPlay
                     Queue(controller.Paused || Session.Mode != LevelInteractionMode.Move ? LevelPlayCommand.Cancel : LevelPlayCommand.Pause);
                 if (keyboard.spaceKey.wasPressedThisFrame) Queue(LevelPlayCommand.Iterate);
                 if (keyboard.bKey.wasPressedThisFrame) Queue(LevelPlayCommand.Clone);
+                if (keyboard.nKey.wasPressedThisFrame) Queue(LevelPlayCommand.Recycle);
                 if (keyboard.upArrowKey.wasPressedThisFrame || keyboard.wKey.wasPressedThisFrame) Queue(LevelPlayCommand.Up);
                 if (keyboard.rightArrowKey.wasPressedThisFrame || keyboard.dKey.wasPressedThisFrame) Queue(LevelPlayCommand.Right);
                 if (keyboard.downArrowKey.wasPressedThisFrame || keyboard.sKey.wasPressedThisFrame) Queue(LevelPlayCommand.Down);
@@ -103,10 +105,16 @@ namespace Game.Runtime.Gameplay.LevelPlay
                 if (board.IsAnimating)
                     requests.RemoveAll(r => r.Command != LevelPlayCommand.Reset && r.Command != LevelPlayCommand.Undo
                         && r.Command != LevelPlayCommand.Cancel && r.Command != LevelPlayCommand.Pause);
-                controller.ProcessFrame(Time.frameCount, requests, out string message);
+                bool accepted = controller.ProcessFrame(Time.frameCount, requests, out string message);
+                if (formalGame && !string.IsNullOrEmpty(message))
+                {
+                    if (!accepted) AudioManager.Emit(Game.Runtime.Data.AudioName.Invalid);
+                    else if (message == "Moved.") AudioManager.Emit(Game.Runtime.Data.AudioName.Move);
+                    else if (message == "Clone created." || message == "Iterated.") AudioManager.Emit(Game.Runtime.Data.AudioName.Divide);
+                }
                 requests.Clear();
                 if (!string.IsNullOrEmpty(message)) status.text = Translate(message);
-                Refresh(message != "Level reset." && message != "Iteration undone.");
+                Refresh(message != "Level reset." && !message.EndsWith(" undone."));
             }
             NotifyVictory();
         }
@@ -142,6 +150,7 @@ namespace Game.Runtime.Gameplay.LevelPlay
             if (!victoryReported)
             {
                 victoryReported = true;
+                AudioManager.Emit(Game.Runtime.Data.AudioName.Victory);
                 VictoryReached?.Invoke(definition.id);
             }
             if (!board.IsAnimating) { completionReady = true; Refresh(); }
@@ -203,10 +212,10 @@ namespace Game.Runtime.Gameplay.LevelPlay
             counters = Label(content, "", 14, 14, 308, 90, 21);
             mode = Label(content, "", 14, 110, 308, 70, 18);
             iterate = ActionButton(content, "迭代  Space", 184, LevelPlayCommand.Iterate);
-            undo = ActionButton(content, "撤销一轮  Z", 236, LevelPlayCommand.Undo);
+            undo = ActionButton(content, "撤销上一步  Z", 236, LevelPlayCommand.Undo);
             reset = ActionButton(content, "重新开始  R", 288, LevelPlayCommand.Reset);
             clone = ActionButton(content, "放置分身  B（Birth）", 340, LevelPlayCommand.Clone);
-            recycle = ActionButton(content, "回收分身", 392, LevelPlayCommand.Recycle);
+            recycle = ActionButton(content, "回收分身 N", 392, LevelPlayCommand.Recycle);
             cancel = ActionButton(content, "取消选择  Esc", 444, LevelPlayCommand.Cancel);
             pause = ActionButton(content, "暂停／继续  Esc", 496, LevelPlayCommand.Pause);
             if (showReturnToEditor || formalGame)
@@ -214,7 +223,7 @@ namespace Game.Runtime.Gameplay.LevelPlay
                 var back = ActionButton(content, formalGame ? "返回选关" : "结束试玩 · 返回编辑", 548, LevelPlayCommand.Cancel);
                 back.onClick.RemoveAllListeners(); back.onClick.AddListener(ReturnToEditor);
             }
-            Label(content, "橙色：玩家 · 蓝紫：普通细胞\n深紫：分身 · 金环：玩家终点\n紫环：细胞目标 · 黄框：可选位置", 14, 606, 308, 92, 16);
+            Label(content, "橙色：玩家 · 蓝紫：普通细胞\n深紫：分身 · 蓝色叉号：玩家终点\n紫环：细胞目标 · 黄框：可选位置", 14, 606, 308, 92, 16);
             goals = Label(content, "", 14, 710, 306, 430, 17);
             status = Label(root, "", 24, 0, 1390, 66, 17);
             status.rectTransform.anchorMin = Vector2.zero; status.rectTransform.anchorMax = new Vector2(1, 0);
@@ -242,7 +251,7 @@ namespace Game.Runtime.Gameplay.LevelPlay
             {
                 bool failed = loaded && Session.Status == LevelPlayStatus.Failed;
                 overlayContinue.gameObject.SetActive(paused || failed);
-                overlayContinue.GetComponentInChildren<TextMeshProUGUI>().text = paused ? "继续" : "撤销一轮  Z";
+                overlayContinue.GetComponentInChildren<TextMeshProUGUI>().text = paused ? "继续" : "撤销上一步  Z";
                 overlayContinue.onClick.RemoveAllListeners();
                 overlayContinue.onClick.AddListener(() => Queue(paused ? LevelPlayCommand.Cancel : LevelPlayCommand.Undo));
                 overlayContinue.interactable = paused || failed && Session.CanUndo;
@@ -281,7 +290,7 @@ namespace Game.Runtime.Gameplay.LevelPlay
             counters.text = "迭代  " + Session.Iteration + " / " + Session.IterationLimit + "\n分身  " + Session.LivingCloneCount + " / " + Session.CloneLimit
                 + "\n可撤销  " + Session.HistoryCount + " / " + LevelPlaySession.HistoryCapacity;
             mode.text = paused ? "已暂停" : Session.Mode == LevelInteractionMode.PlaceClone ? "分身模式：点击黄色空格\n取消后再进行其他操作"
-                : Session.Mode == LevelInteractionMode.RecycleClone ? "回收模式：点击黄色分身\n取消后再进行其他操作" : "移动模式：方向键单次移动";
+                : Session.Mode == LevelInteractionMode.RecycleClone ? "回收模式：点击蓝白圈标记的分身\n取消后再进行其他操作" : "移动模式：方向键单次移动";
             overlayText.text = paused ? "已暂停\nEsc 或暂停／继续按钮返回" : Session.Status == LevelPlayStatus.Won ? "目标已达成\n可按 Z 撤销或 R 重新开始"
                 : "迭代次数已超限\n可按 Z 撤销或 R 重新开始";
             goals.text = DescribeGoals(Session.State);
@@ -357,22 +366,24 @@ namespace Game.Runtime.Gameplay.LevelPlay
             {
                 case "Moved.": return "已移动。";
                 case "Iterated.": return "已完成一轮迭代。";
-                case "Iteration undone.": return "已恢复迭代前状态，并丢弃该轮之后的移动、分身与回收。";
+                case "Iteration undone.": return "已撤销上一次演化。";
+                case "Clone creation undone.": return "已撤销创建分身。";
+                case "Clone recycling undone.": return "已撤销回收，恢复分身。";
                 case "Level reset.": return "已恢复初始布局并清空历史。";
-                case "No iteration history to undo.": return "已到可撤销历史的起点；Z 不单独撤销移动、分身或回收。";
+                case "No action history to undo.": return "没有可撤销的演化、分身或回收操作。";
                 case "Paused.": return "已暂停，棋盘不接受操作。";
                 case "Resumed.": return "已继续。";
                 case "Selection cancelled.": return "已取消选择。";
                 case "Destination is not floor.": return "目标是墙、空洞或棋盘之外，无法移动。";
                 case "Destination is occupied by a living cell.": return "目标被存活细胞占据，无法移动。";
                 case "Cloning is disabled in this level.": return "本关分身额度为 0，不能创建分身。";
-                case "Clone limit reached; recycle a clone first.": return "分身已满，请先回收一个。";
+                case "Clone limit reached; recycle a clone first.": return "分身已满，按 N 后点击存活分身回收。";
                 case "No adjacent empty floor is available.": return "玩家周围没有可放置分身的空地。";
                 case "Select an adjacent empty floor tile.": return "请选择黄色高亮、地形连通的相邻空地，或按 Esc 取消。";
                 case "Select an adjacent empty floor tile within the clone limit.": return "该位置不能放置分身：须为空地、地形连通且在玩家周围八格内。";
                 case "Clone created.": return "已创建分身，返回移动模式。";
                 case "No living clones to recycle.": return "当前没有可回收的存活分身。";
-                case "Select a living clone anywhere on the board.": return "请选择棋盘任意位置的黄色分身，或按 Esc 取消。";
+                case "Select a living clone anywhere on the board.": return "请选择棋盘任意位置带蓝白圈标记的分身，或按 Esc 取消。";
                 case "Only living clones can be recycled.": return "只能回收分身，不能回收玩家或初始普通细胞。";
                 case "Clone recycled.": return "已回收分身并释放名额，返回移动模式。";
                 case "Iteration limit exceeded.": return "迭代次数已超限，本次没有改变棋盘。可按 Z 撤销或 R 重试。";

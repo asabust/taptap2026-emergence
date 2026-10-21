@@ -30,5 +30,11 @@ namespace Game.Runtime.Data
         None,
         Click,
         BGM,
+        MenuBGM,
+        Hover,
+        Move,
+        Divide,
+        Victory,
+        Invalid,
     }
 }

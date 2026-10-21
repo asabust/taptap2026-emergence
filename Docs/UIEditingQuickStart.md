@@ -46,3 +46,80 @@ python3 Docs/Tools/import-ui-database.py Docs/GameData/Database.xlsx
 完整章节通关、胜利后的档案阅读与回看、失败恢复、全部目标画幅、独立包及 WebGL 构建仍需验收。美术布局为首版占位，尚非视觉定稿。未修改关卡 JSON、提交或推送代码。
 
 全量 Unity 资源校验补充：14 个 Prefab、全部立绘引用及 13 个对话组检查通过；18 份 JSON 中 202 缺少通关目标，需策划补齐，其他 17 份通过玩法校验。本次不替策划填写目标。
+
+## 章节圆形透视（2026-10-21）
+
+已接入两张同尺寸背景：总览显示骨骼线稿；进入章节后，左侧放大相应部位，圆形 UGUI Mask 内显示彩色透视图，右侧保留关卡列表；右上角返回人体总览。两层图像始终保持同位置和同缩放。圆框和准星为 UI 图形。
+
+停止 Play Mode 后双击 `Assets/Resources/UI/ChapterSelectPanel.prefab`：
+
+- `ScanViewport`：Rect Transform 调整左侧区域的位置和大小；`Chapter Scan View → Magnification` 调放大倍率；`Preview Focus` 是编辑器预览坐标（左下 0,0，右上 1,1）。
+- `ScanViewport/ScanCircle`：Rect Transform 调圆圈的位置、宽高；宽高保持相等。`ScanOutline`、`Reticle` 控制圆框和准星。
+- 不要单独调整 `SkeletonLayer` 与 `AnatomyLayer` 的 Transform，组件会同步它们；换图用对应 Image 的 Source Image，两张新图必须有相同画布和人体配准。
+- `LevelSelectPanel/Anatomy` 下的章节按钮可移动；运行时从按钮实际位置计算透视中心。
+
+正常从 TitleScene 运行。仅预览时，也可进入 Play Mode 后执行 `Tools → UI → Preview Chapter Selection (Play Mode)`，不会写入通关或对话进度。布局修改仍应在停止运行后进行。
+
+验证：Editor/Player 编译通过；Unity 中五个章节坐标、15 组图层对齐检查通过；已实际点击第一章，检查圆形显示、关卡锁定和右上角返回，Console 无错误或警告。其余章节受正常存档解锁限制，未逐章手动点击。
+
+## 全局设置入口
+
+所有正式界面共用 `Assets/Resources/UI/GlobalSettingsButton.prefab`，运行时固定显示在 UI 顶层；加载、设置及确认窗口期间隐藏。修改这个 Prefab 的 Rect Transform、图片和文字即可统一调整入口。标题原设置按钮、选章旧返回按钮由运行时隐藏，避免重复。章节返回仍用于回到人体总览。
+
+`SettingsPanel.prefab` 中音乐/音效滑块即时生效，关闭时保存；包含返回标题和退出游戏确认。游戏中离开提示“退出本局状态不会保存”。打开设置时玩法输入及棋盘演化被阻挡，对话停止打字和翻页，关闭后恢复。WebGL 隐藏退出游戏。
+
+已验证：共用设置入口打开菜单，退出确认取消，返回标题确认后进入标题。编译通过。测试中的 GameManager 单例报错由人为 inactive 造成，保留用户测试状态；未确认退出应用，也未逐页测试全部玩法状态。
+
+## 游戏内按钮与棋盘（2026-10-21）
+
+编辑 `Assets/Resources/UI/GameplayHUDPanel.prefab`：`UndoButton`、`CloneButton`、`IterateButton` 对应撤销、B 分身、Space 演化。图片已绑定 `Assets/Arts/UI/Game` 中的撤销按钮、分身按钮、分裂按钮；Image → Source Image 可换图，子物体 Caption 编辑名称及快捷键。回收分身暂保留文字按钮，尚无对应命名图片。
+
+`BoardHost/Board` 的 Organic Level Board View → Goal Icon 已绑定终点图标。棋盘使用静止、轴对齐的方形地砖，浅色地面、深色墙面；普通细胞半径以约 4.2 秒周期轻微变化（±2.5%），分身与玩家不参与此呼吸动画。移动及演化的状态过渡仍保留。目标说明已更新为“抵达蓝色交叉终点”。
+
+编译与 306 项逻辑检查通过；Unity 正式 Gameplay 运行画面已确认新按钮、方形地砖与蓝色叉号显示正常。未改关卡 JSON 和规则。
+
+## 标题新游戏与继续游戏
+
+`TitlePanel.prefab` 的 `NewGameButton` 与 `ContinueButton` 分别绑定 Campaign Panel View 的 Primary、Secondary。两个按钮同时显示；Continue 只在存在可读取进度时可用。首次开始即保存空通关进度，因此未通关也能继续到选关。继续仍记录关卡通关/解锁，不保存本局棋盘状态。
+
+已有进度时，新游戏先弹确认，确认才重置通关、章节档案解锁及对话/教程阅读记录；音量设置保留。未执行用户真实存档重置来测试。Unity 已确认标题双按钮显示，编译通过。
+
+有效地砖恢复浅蓝到灰蓝的整体静态渐变；墙面保持深色，方形轮廓、间隙和位置固定。渐变不再随时间或玩家移动变化。
+
+## 开场对话时机与游戏内设置入口
+
+BeforeLevel 对话在 Gameplay 场景完成关卡数据初始化、HUD/棋盘构建以及场景淡入后播放，背景为已加载的关卡。等待期间保留加载遮罩并阻止玩法输入；对话关闭后继续关卡。已读跳过规则不变，不清除现有阅读记录。AfterWin 对话流程不变。
+
+Gameplay 场景隐藏 GlobalSettingsButton；左上角暂停菜单继续提供设置。标题、章节和档案界面仍显示全局设置入口。编译通过。
+
+游戏内 `RecycleButton` 已隐藏，保留 Z 整轮撤销。规则说明同步移除手动回收入口提示。撤销不等于单独删除分身，玩法规则和编辑器诊断功能不变。
+
+回收功能保留为键盘入口：N 进入回收模式，点击任意存活分身回收，Esc 取消。屏幕按钮隐藏，底部及规则中提供快捷键提示。初始普通细胞不可回收，Z 仍为整轮撤销。
+
+## 音乐与音效
+
+沿用 AudioManager，配置资产为 `Assets/GameData/AudioInfoListSO.asset`，Persistent 场景已绑定。两个 AudioSource 分别负责音乐与音效，均为 2D。音乐播放和滑块调节始终保留各 Clip 的基础音量；音效使用 PlayOneShot，避免移动/UI 声切断其他音效。
+
+| Audio Name | 文件 / 触发 |
+| --- | --- |
+| MenuBGM | 主菜单bgm：标题、选章、选关，循环 |
+| BGM | 关卡循环bgm：进入 Gameplay，循环 |
+| Hover / Click | UI悬停 / UI点击：可用按钮 |
+| Move | 玩家移动：成功移动 |
+| Divide | 分裂分身：成功演化或创建分身 |
+| Invalid | 无效操作：玩法操作被规则拒绝 |
+| Victory | 关卡过关瞬间：首次判定胜利 |
+
+暂停/对话期间音乐继续播放。音乐/音效设置独立保存；不随新游戏清除。编辑 Audio Infos 内每项 Volume 调基础混音，Loop 只勾选两首 BGM。`Tools → UI → Configure Named Audio` 可按命名文件重新生成初始配置（会覆盖表内基础音量）；`Validate Named Audio` 检查八个 Clip 和循环配置，Play Mode 下还检查当前音乐播放源。
+
+Unity 内已经重新生成和保存配置，Inspector 显示 8 项；Play Mode 音乐源加载主菜单曲目并处于播放状态验证通过。编译通过。最终响度、音效听感和循环接缝仍需人工试听。
+
+## 分身回收与撤销更新
+
+N 按关卡配置的 cloneLimit 判断：上限等于 1 且有存活分身时直接回收；上限大于 1 时进入选择，即使目前只剩一个分身也须选择。无分身时提示无可回收目标。选择模式用蓝白双圈标记可回收分身，标记绘制在细胞之上；Esc 取消。
+
+Z 按倒序撤销成功的演化、创建分身、回收分身，最多保留 100 次操作。撤销恢复操作前的完整棋盘、玩家位置、迭代数与分身名额；移动不单独记步。进入/取消选择、失败操作不占历史。撤销可在选择模式使用，使用后回到移动模式。此前文档的“只撤销演化”规则由本条替代。新增单分身直接回收、混合撤销、无效目标、选择中撤销等回归检查。
+
+## 本次提交状态
+
+收录已调整的 UI Prefab、章节圆形透视、标题双入口、共用设置、关卡后加载对话、静态渐变方砖、蓝色终点、图标按钮、音频接入，以及 N 回收/Z 分身撤销。演化按钮美术现命名为“迭代按钮.png”。用户已为 202.json 补充玩家到达目标，先前“202 无目标”的记录已失效。场景、美术重命名与打包产品设置一同保存；不包含本机 Finder 缓存。

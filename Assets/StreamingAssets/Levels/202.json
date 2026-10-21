@@ -602,6 +602,17 @@
   ],
   "winConditions": {
     "combine": "all",
-    "conditions": []
+    "conditions": [
+      {
+        "type": "actorAtPosition",
+        "position": {
+          "x": 9,
+          "y": 1
+        },
+        "positions": null,
+        "operator": null,
+        "value": null
+      }
+    ]
   }
 }

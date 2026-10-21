@@ -26,6 +26,7 @@ namespace Game.Runtime.Gameplay.Campaign
         public string Notice { get; private set; } = "";
         public string HighlightId { get; private set; }
         public bool Loading { get; private set; }
+        public bool HasSave => progressWritable && Progress != null && PlayerPrefs.HasKey(ProgressKey);
         private LevelDefinition pendingLevel;
         private bool progressWritable = true;
         public CampaignInterface UI { get; private set; }
@@ -85,10 +86,12 @@ namespace Game.Runtime.Gameplay.Campaign
                 if (!screen) { Notice = "Gameplay 缺少 LevelPlayScreen。"; ReturnToSelection(); return; }
                 screen.loadOnStart = false;
                 screen.formalGame = true;
+                string levelId = pendingLevel.id;
                 screen.Initialize(pendingLevel);
                 screen.ExitRequested += ReturnToSelection;
                 screen.VictoryReached += RecordVictory;
                 pendingLevel = null;
+                UI.BeforeLevelWhenReady(levelId, screen);
             }
         }
         public void BeginGame()
@@ -97,16 +100,30 @@ namespace Game.Runtime.Gameplay.Campaign
             if (!Catalog || Progress == null)
             { ShowMessage("关卡目录未配置", "请先执行 Tools → Levels → Configure Stage 7 Game Flow。"); return; }
             // Opening-dialogue insertion point. No story or read-state is invented here.
+            if (progressWritable) { PlayerPrefs.SetString(ProgressKey, Progress.Serialize()); PlayerPrefs.Save(); }
             HighlightId = Progress.RecommendedId;
             UI.SelectedChapter = null;
             ChangeScene(SelectionScene, GamePhase.LevelSelect);
+        }
+        public void NewGame()
+        {
+            if (Loading || !Catalog) return;
+            Action start = () =>
+            {
+                var fresh = new CampaignProgress(Catalog.levels.Select(l => l.id));
+                if (Catalog.chapters.Count > 0) fresh.ConfigureChapters(Catalog.chapters.Select(c => c.levelIds.AsEnumerable()));
+                Progress = fresh; progressWritable = true; Notice = ""; pendingLevel = null;
+                UI.ResetNarrativeHistory(); BeginGame();
+            };
+            if (PlayerPrefs.HasKey(ProgressKey)) UI.Confirm("开始新游戏？", "现有通关进度、对话阅读记录和章节档案解锁将重置。音量设置会保留。", start);
+            else start();
         }
         public void ReturnToSelection()
         {
             pendingLevel = null;
             ChangeScene(SelectionScene, GamePhase.LevelSelect);
         }
-        public void ReturnToTitle() { pendingLevel = null; ChangeScene("TitleScene", GamePhase.GameTitle); }
+        public void ReturnToTitle() { pendingLevel = null; Loading = false; ChangeScene("TitleScene", GamePhase.GameTitle); }
         private void ChangeScene(string name, GamePhase phase)
         {
             if (Loading) return;
@@ -179,8 +196,7 @@ namespace Game.Runtime.Gameplay.Campaign
             UI.SetLoading(false);
             if (error != null) { failed("无法读取关卡 " + id + "：" + error); yield break; }
             HighlightId = id;
-            Loading = true;
-            UI.BeforeLevel(id, () => { Loading = false; ChangeScene("Gameplay", GamePhase.Gameplay); });
+            ChangeScene("Gameplay", GamePhase.Gameplay);
         }
         private void RecordVictory(string id)
         {
@@ -198,7 +214,7 @@ namespace Game.Runtime.Gameplay.Campaign
         }
         public void ConfirmQuit()
         {
-            UI.Confirm("退出游戏？", "已完成关卡的进度会保留。", () =>
+            UI.Confirm("退出游戏？", SceneManager.GetActiveScene().name == "Gameplay" ? "退出本局状态不会保存" : "已完成关卡的进度会保留。", () =>
             {
                 PlayerPrefs.Save();
 #if UNITY_EDITOR

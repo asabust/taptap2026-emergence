@@ -19,6 +19,144 @@ namespace Game.Editor
         private static TMP_FontAsset font;
         private static readonly Color Ink = new Color(.19f,.24f,.32f);
         private static readonly Color Paper = new Color(.94f,.95f,.96f);
+        [MenuItem("Tools/UI/Configure Named Audio")]
+        public static void ConfigureNamedAudio()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode) throw new InvalidOperationException("请停止 Play 后配置音频。");
+            var catalog = AssetDatabase.LoadAssetAtPath<Game.Runtime.Data.AudioInfoListSO>("Assets/GameData/AudioInfoListSO.asset");
+            if (!catalog) throw new InvalidOperationException("Audio catalog missing.");
+            var files = new[]{"UI点击.wav","关卡循环bgm.mp3","主菜单bgm.mp3","UI悬停.wav","玩家移动.ogg","分裂分身.ogg","关卡过关瞬间.ogg","无效操作.wav"};
+            var volumes = new[]{.8f,.45f,.45f,.45f,.7f,.75f,.85f,.65f};
+            catalog.audioInfos.Clear();
+            for (int i=0;i<files.Length;i++)
+            {
+                var clip = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Arts/Sound/"+files[i]);
+                if (!clip) throw new InvalidOperationException("Audio import missing: "+files[i]);
+                catalog.audioInfos.Add(new Game.Runtime.Data.AudioInf { audioName=(Game.Runtime.Data.AudioName)(i+1),clip=clip,volume=volumes[i],loop=i==1||i==2 });
+            }
+            EditorUtility.SetDirty(catalog); AssetDatabase.SaveAssets();
+            ValidateNamedAudio(); UnityEditor.Selection.activeObject=catalog;
+        }
+        [MenuItem("Tools/UI/Validate Named Audio")]
+        public static void ValidateNamedAudio()
+        {
+            var catalog = AssetDatabase.LoadAssetAtPath<Game.Runtime.Data.AudioInfoListSO>("Assets/GameData/AudioInfoListSO.asset");
+            if (!catalog) throw new InvalidOperationException("Audio catalog missing.");
+            foreach (Game.Runtime.Data.AudioName name in Enum.GetValues(typeof(Game.Runtime.Data.AudioName)))
+            {
+                if (name == Game.Runtime.Data.AudioName.None) continue;
+                var entry = catalog.GetAudioInfo(name);
+                if (entry == null || !entry.clip || entry.clip.length <= 0 || entry.clip.samples <= 0)
+                    throw new InvalidOperationException("Audio clip missing or empty: " + name);
+                bool music = name == Game.Runtime.Data.AudioName.BGM || name == Game.Runtime.Data.AudioName.MenuBGM;
+                if (entry.loop != music) throw new InvalidOperationException("Unexpected loop setting: " + name);
+            }
+            foreach (var manager in UnityEngine.Object.FindObjectsOfType<AudioManager>(true))
+            {
+                manager.audioInfoListSO = catalog;
+                if (EditorApplication.isPlaying && manager.isActiveAndEnabled)
+                {
+                    var expected = catalog.GetAudioInfo(UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "Gameplay" ? Game.Runtime.Data.AudioName.BGM : Game.Runtime.Data.AudioName.MenuBGM);
+                    if (!manager.musicSource || manager.musicSource.clip != expected.clip || !manager.musicSource.isPlaying)
+                        throw new InvalidOperationException("Expected scene music is not playing.");
+                    if (!manager.sfxSource || manager.sfxSource == manager.musicSource || manager.sfxSource.loop)
+                        throw new InvalidOperationException("SFX source must be separate and non-looping.");
+                }
+            }
+            File.WriteAllText("Temp/NamedAudioValidation.txt", "PASS: 8 clips; music and SFX loops valid; playMode=" + EditorApplication.isPlaying);
+            Debug.Log("PASS: eight named audio clips loaded; two looping music tracks, six one-shot effects. Loaded AudioManager references synchronized.");
+        }
+        [MenuItem("Tools/UI/Configure Title New And Continue")]
+        public static void ConfigureTitleActions()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode || UnityEditor.SceneManagement.PrefabStageUtility.GetCurrentPrefabStage() != null)
+                throw new InvalidOperationException("请停止 Play，保存并退出 Prefab Mode 后执行。");
+            var go = PrefabUtility.LoadPrefabContents(Folder + "TitlePanel.prefab");
+            try
+            {
+                var view = go.GetComponent<CampaignPanelView>();
+                if (!view.secondary)
+                {
+                    view.secondary = UnityEngine.Object.Instantiate(view.primary,view.primary.transform.parent,false);
+                    var rect = (RectTransform)view.secondary.transform;
+                    rect.anchoredPosition = ((RectTransform)view.primary.transform).anchoredPosition + new Vector2(0,-90);
+                }
+                view.primary.name = "NewGameButton"; view.primary.GetComponentInChildren<TextMeshProUGUI>(true).text = "新游戏";
+                view.secondary.name = "ContinueButton"; view.secondary.GetComponentInChildren<TextMeshProUGUI>(true).text = "继续游戏";
+                if (view.settings) view.settings.gameObject.SetActive(false);
+                PrefabUtility.SaveAsPrefabAsset(go,Folder + "TitlePanel.prefab");
+            }
+            finally { PrefabUtility.UnloadPrefabContents(go); }
+            AssetDatabase.SaveAssets(); Debug.Log("PASS: title new game and continue buttons configured.");
+        }
+        [MenuItem("Tools/UI/Apply Gameplay Icons And Square Tiles")]
+        public static void ApplyGameplayIcons()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode || UnityEditor.SceneManagement.PrefabStageUtility.GetCurrentPrefabStage() != null)
+                throw new InvalidOperationException("请保存并退出 Prefab Mode，停止 Play 后执行。");
+            var go = PrefabUtility.LoadPrefabContents(Folder + "GameplayHUDPanel.prefab");
+            try
+            {
+                var view = go.GetComponent<GameplayHUDView>();
+                ApplyIcon(view.undo,"撤销按钮.png",500);
+                ApplyIcon(view.clone,"分身按钮.png",660);
+                view.clone.GetComponentInChildren<TextMeshProUGUI>(true).text = "分身 B";
+                ApplyIcon(view.iterate,"迭代按钮.png",820);
+                view.board.goalIcon = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Arts/UI/Game/终点图标.png");
+                view.board.styledTerrain = true;
+                PrefabUtility.SaveAsPrefabAsset(go,Folder + "GameplayHUDPanel.prefab");
+            }
+            finally { PrefabUtility.UnloadPrefabContents(go); }
+            AssetDatabase.SaveAssets(); Debug.Log("PASS: gameplay button artwork and blue goal icon assigned.");
+        }
+        private static void ApplyIcon(Button button,string file,float y)
+        {
+            var image = button.GetComponent<Image>();
+            image.sprite = SpriteAt("Assets/Arts/UI/Game/" + file); image.color = Color.white;
+            image.type = UnityEngine.UI.Image.Type.Simple; image.preserveAspect = true;
+            var rect = (RectTransform)button.transform;
+            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(1,1);
+            rect.anchoredPosition = new Vector2(-60,-y); rect.sizeDelta = new Vector2(180,130);
+            var label = button.GetComponentInChildren<TextMeshProUGUI>(true);
+            label.color = Ink; label.fontSize = 23;
+            var text = label.rectTransform; text.anchorMin = text.anchorMax = new Vector2(.5f,0);
+            text.pivot = new Vector2(.5f,1); text.anchoredPosition = Vector2.zero; text.sizeDelta = new Vector2(260,30);
+        }
+        [MenuItem("Tools/UI/Configure Shared Settings")]
+        public static void ConfigureSharedSettings()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode || UnityEditor.SceneManagement.PrefabStageUtility.GetCurrentPrefabStage() != null)
+                throw new InvalidOperationException("请保存并退出 Prefab Mode，停止 Play 后执行。");
+            if (!AssetDatabase.LoadAssetAtPath<GameObject>(Folder + "GlobalSettingsButton.prefab"))
+            {
+                var map = PrefabUtility.LoadPrefabContents(Folder + "LevelSelectPanel.prefab");
+                try
+                {
+                    var view = map.GetComponent<CampaignPanelView>();
+                    var button = UnityEngine.Object.Instantiate(view.settings ? view.settings : view.back);
+                    button.name = "GlobalSettingsButton";
+                    var rect = (RectTransform)button.transform;
+                    rect.anchorMin = rect.anchorMax = rect.pivot = Vector2.one;
+                    rect.anchoredPosition = new Vector2(-60,-35); rect.sizeDelta = new Vector2(130,64); rect.localScale = Vector3.one;
+                    button.GetComponentInChildren<TextMeshProUGUI>(true).text = "设置";
+                    PrefabUtility.SaveAsPrefabAsset(button.gameObject, Folder + "GlobalSettingsButton.prefab");
+                    UnityEngine.Object.DestroyImmediate(button.gameObject);
+                }
+                finally { PrefabUtility.UnloadPrefabContents(map); }
+            }
+            var settings = PrefabUtility.LoadPrefabContents(Folder + "SettingsPanel.prefab");
+            try
+            {
+                var v = settings.GetComponent<CampaignPanelView>();
+                font = v.heading.font;
+                v.heading.text = "设置";
+                if (!v.secondary) v.secondary = Button(v.transform,"ReturnTitleButton","返回标题",570,670,360);
+                if (!v.back) v.back = Button(v.transform,"QuitGameButton","退出游戏",990,670,360);
+                PrefabUtility.SaveAsPrefabAsset(settings, Folder + "SettingsPanel.prefab");
+            }
+            finally { PrefabUtility.UnloadPrefabContents(settings); }
+            AssetDatabase.SaveAssets(); Debug.Log("PASS: shared settings button and navigation configured.");
+        }
         [MenuItem("Tools/UI/Apply Initial Text Contrast")]
         public static void InitialContrast()
         {
@@ -142,8 +280,9 @@ namespace Game.Editor
             var v = Root("TitlePanel");
             Image(v.transform,"Cover",0,0,1920,1080,SpriteAt("Assets/Arts/UI/Title/第一界面底图_草.png")).preserveAspect=false;
             Image(v.transform,"Logo",410,130,1100,470,SpriteAt("Assets/Arts/UI/Title/格命标题_透明.png"));
-            v.primary=Button(v.transform,"ContinueButton","开始游戏",750,700);
-            v.settings=Button(v.transform,"SettingsButton","设置",750,790); v.back=Button(v.transform,"QuitButton","退出",750,880); return v;
+            v.primary=Button(v.transform,"NewGameButton","新游戏",750,700);
+            v.secondary=Button(v.transform,"ContinueButton","继续游戏",750,790);
+            v.settings=Button(v.transform,"SettingsButton","设置",1730,35,130); v.back=Button(v.transform,"QuitButton","退出",750,880); return v;
         }
         private static CampaignPanelView Selection()
         {
@@ -168,7 +307,6 @@ namespace Game.Editor
         {
             var v=Root("ChapterSelectPanel");v.back=Button(v.transform,"BackButton","返回人体图",70,40,260);
             v.heading=Text(v.transform,"ChapterTitle","章节名称",1030,150,800,90,48);
-            v.detail=Text(v.transform,"BodyPart","身体部位",1030,260,700,60);
             v.progress=Text(v.transform,"ChapterProgress","0 / 4",1650,50,200,60);
             v.artwork=Image(v.transform,"ChapterArtwork",90,160,830,800,SpriteAt("Assets/Arts/UI/LevelSelect/选关界面上层线稿骨骼图.png"));
             v.content=Rect(v.transform,"LevelList",1030,370,780,480);
@@ -194,9 +332,11 @@ namespace Game.Editor
         }
         private static CampaignPanelView Settings()
         {
-            var v=Root("SettingsPanel",true);v.heading=Text(v.transform,"Title","音量设置",570,250,780,80,40);
+            var v=Root("SettingsPanel",true);v.heading=Text(v.transform,"Title","设置",570,250,780,80,40);
             Text(v.transform,"MusicLabel","音乐",570,410,200,60);v.music=Slider(v.transform,"MusicSlider",820,410);
             Text(v.transform,"SfxLabel","音效",570,540,200,60);v.sfx=Slider(v.transform,"SfxSlider",820,540);
+            v.secondary=Button(v.transform,"ReturnTitleButton","返回标题",570,670,360);
+            v.back=Button(v.transform,"QuitGameButton","退出游戏",990,670,360);
             v.primary=Button(v.transform,"CloseButton","关闭",750,750);return v;
         }
         private static Slider Slider(Transform parent,string name,float x,float y)
@@ -245,7 +385,7 @@ namespace Game.Editor
         private static CampaignPanelView Failure()
         {
             var v=Pause();v.name="FailurePanel";v.heading.text="演化次数已超限";
-            v.primary.GetComponentInChildren<TextMeshProUGUI>().text="撤销一轮";v.settings.gameObject.SetActive(false);return v;
+            v.primary.GetComponentInChildren<TextMeshProUGUI>().text="撤销上一步";v.settings.gameObject.SetActive(false);return v;
         }
         private static CampaignPanelView Victory()
         {
@@ -267,9 +407,9 @@ namespace Game.Editor
             v.board=br.gameObject.AddComponent<OrganicLevelBoardView>();v.board.styledTerrain=true;
             v.title=Text(root,"LevelTitle","关卡名称",50,850,500,60,38);v.goals=Text(root,"Objectives","目标",50,930,530,130,25);
             v.undo=Button(root,"UndoButton","撤销 Z",1670,670,200,64);
-            v.clone=Button(root,"CloneButton","分裂 B",1600,770,260,64);
+            v.clone=Button(root,"CloneButton","分身 B",1600,770,260,64);
             v.iterate=Button(root,"IterateButton","演化 Space",1600,860,260,110);
-            v.recycle=Button(root,"RecycleButton","回收分身",1600,990,260,54);
+            v.recycle=Button(root,"RecycleButton","回收分身",1600,990,260,54);v.recycle.gameObject.SetActive(false);
             v.rules=Button(root,"RulesButton","本关规则",50,110,240);
             v.cancel=Button(root,"CancelButton","取消选择 Esc",760,900,400);
             v.mode=Text(root,"Mode","方向键 / WASD 移动",600,990,940,40,23);

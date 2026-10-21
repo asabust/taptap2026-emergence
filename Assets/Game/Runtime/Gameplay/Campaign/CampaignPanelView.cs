@@ -15,5 +15,6 @@ namespace Game.Runtime.Gameplay.Campaign
         public Button itemTemplate;
         public Button[] chapterButtons;
         public TextMeshProUGUI[] chapterLabels;
+        public ChapterScanView chapterScan;
     }
 }

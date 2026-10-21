@@ -112,3 +112,6 @@ InitTestScene*.unity*
 /.vscode
 /MacBuild
 /WinBuild
+
+# macOS Finder metadata
+.DS_Store

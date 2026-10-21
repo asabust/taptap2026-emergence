@@ -1147,7 +1147,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7c95484e092a348038ba124febff0a0b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  firstGameScene: TitleScene
+  firstGameScene: Gameplay
   titleScene: TitleScene
 --- !u!4 &1537324991
 Transform:
@@ -1409,7 +1409,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8134c405777b44d2cb1c7160ece152c1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  audioInfoListSO: {fileID: 0}
+  audioInfoListSO: {fileID: 11400000, guid: 2bb5e8de530aa4afaa44eae41a9fb900, type: 2}
   musicSource: {fileID: 1755178300}
   sfxSource: {fileID: 1130300}
 --- !u!4 &1988512324

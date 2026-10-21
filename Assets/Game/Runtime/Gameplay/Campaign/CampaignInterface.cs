@@ -18,11 +18,13 @@ namespace Game.Runtime.Gameplay.Campaign
         private CampaignRuntime flow;
         private RectTransform root;
         private CampaignPanelView main, dialogue;
+        private Button globalSettings;
         private readonly List<CampaignPanelView> modals = new List<CampaignPanelView>();
         private readonly HashSet<string> read = new HashSet<string>(StringComparer.Ordinal);
         private bool historyWritable = true, loading, reveal, advance, confirmingSkip;
         private int dialogueInputFrame = -1;
         private NarrativeDatabase database;
+        private readonly Dictionary<string, Vector2> chapterFocus = new Dictionary<string, Vector2>();
         public string SelectedChapter { get; set; }
         [Serializable] private sealed class ReadState { public int version = 1; public string[] ids; }
         private const string ReadKey = "Campaign.Narrative.v1";
@@ -32,6 +34,8 @@ namespace Game.Runtime.Gameplay.Campaign
             Instance = this; flow = runtime;
             root = CampaignUI.Canvas(transform, "Campaign UI", 80);
             root.GetComponent<CanvasScaler>().referenceResolution = new Vector2(1920, 1080);
+            var settingsPrefab = Resources.Load<Button>("UI/GlobalSettingsButton");
+            if (settingsPrefab) { globalSettings = Instantiate(settingsPrefab, root, false); AudioManager.AttachUI(globalSettings.gameObject); Bind(globalSettings, ShowSettings); }
             var source = Resources.Load<TextAsset>("Campaign/Narrative");
             database = source ? JsonUtility.FromJson<NarrativeDatabase>(source.text) : new NarrativeDatabase();
             try
@@ -52,6 +56,7 @@ namespace Game.Runtime.Gameplay.Campaign
             var prefab = Resources.Load<CampaignPanelView>("UI/" + name);
             if (!prefab) throw new InvalidOperationException("UI Prefab 缺失：" + name + "。请执行 Tools/UI/Create Editable UI。");
             var view = Instantiate(prefab, root, false);
+            AudioManager.AttachUI(view.gameObject);
             view.name = name; view.gameObject.SetActive(true);
             if (modal) modals.Add(view);
             return view;
@@ -60,7 +65,7 @@ namespace Game.Runtime.Gameplay.Campaign
         {
             if (!button) return;
             button.onClick.RemoveAllListeners();
-            button.onClick.AddListener(() => { if (UnityEngine.EventSystems.EventSystem.current) UnityEngine.EventSystems.EventSystem.current.SetSelectedGameObject(null); action(); });
+            button.onClick.AddListener(() => { if (UnityEngine.EventSystems.EventSystem.current) UnityEngine.EventSystems.EventSystem.current.SetSelectedGameObject(null); action(); AudioManager.Emit(Game.Runtime.Data.AudioName.Click); });
         }
         public void ClearMain()
         {
@@ -82,8 +87,15 @@ namespace Game.Runtime.Gameplay.Campaign
         public void ShowTitle()
         {
             ClearMain(); SelectedChapter = null; main = Create("TitlePanel");
-            main.primary.GetComponentInChildren<TextMeshProUGUI>().text = flow.Progress != null && flow.Catalog.levels.Any(l => flow.Progress.IsCompleted(l.id)) ? "继续游戏" : "开始游戏";
-            Bind(main.primary, flow.BeginGame); Bind(main.settings, ShowSettings); Bind(main.back, flow.ConfirmQuit);
+            main.primary.GetComponentInChildren<TextMeshProUGUI>().text = "新游戏";
+            Bind(main.primary, flow.NewGame);
+            if (main.secondary)
+            {
+                main.secondary.GetComponentInChildren<TextMeshProUGUI>().text = "继续游戏";
+                main.secondary.interactable = flow.HasSave; Bind(main.secondary, flow.BeginGame);
+            }
+            Bind(main.settings, ShowSettings); Bind(main.back, flow.ConfirmQuit);
+            if (globalSettings && main.settings) main.settings.gameObject.SetActive(false);
 #if UNITY_WEBGL && !UNITY_EDITOR
             main.back.gameObject.SetActive(false);
 #endif
@@ -91,7 +103,8 @@ namespace Game.Runtime.Gameplay.Campaign
         public void ShowSelection()
         {
             if (!string.IsNullOrEmpty(SelectedChapter)) { ShowChapter(SelectedChapter); return; }
-            ClearMain(); main = Create("LevelSelectPanel"); Bind(main.back, flow.ReturnToTitle);
+            ClearMain(); main = Create("LevelSelectPanel"); Bind(main.back, ShowSettings); Bind(main.settings, ShowSettings);
+            if (globalSettings && main.back) main.back.gameObject.SetActive(false);
             if (!flow.Catalog || flow.Progress == null) { main.detail.text = "关卡目录暂不可用。"; return; }
             main.detail.text = flow.Notice;
             main.progress.text = "已完成 " + flow.Catalog.levels.Count(l => flow.Progress.IsCompleted(l.id)) + " / " + flow.Catalog.levels.Count;
@@ -102,7 +115,13 @@ namespace Game.Runtime.Gameplay.Campaign
                 bool unlocked = flow.Progress.IsChapterUnlocked(index);
                 int completed = chapter.levelIds.Count(flow.Progress.IsCompleted);
                 main.chapterButtons[i].interactable = unlocked;
-                main.chapterLabels[i].text = (i == 4 ? "最终章" : "第" + (i + 1) + "章") + " · " + chapter.bodyPart + "\n" + (unlocked ? completed + " / " + chapter.levelIds.Count : "通关上一章解锁");
+                main.chapterLabels[i].text = "第" + (i + 1) + "章\n" + completed + "/" + chapter.levelIds.Count;
+                var node = main.chapterButtons[i].transform as RectTransform;
+                var picture = node.parent as RectTransform;
+                // Use authored button positions, including offsets, rather than resetting them from the catalog.
+                Vector2 local = picture.InverseTransformPoint(node.TransformPoint(node.rect.center));
+                Rect imageRect = picture.rect;
+                chapterFocus[chapter.id] = new Vector2(Mathf.InverseLerp(imageRect.xMin, imageRect.xMax, local.x), Mathf.InverseLerp(imageRect.yMin, imageRect.yMax, local.y));
                 Bind(main.chapterButtons[i], () => ShowChapter(chapter.id));
             }
         }
@@ -113,9 +132,12 @@ namespace Game.Runtime.Gameplay.Campaign
             int index = flow.Catalog.chapters.IndexOf(chapter);
             if (!flow.Progress.IsChapterUnlocked(index)) { SelectedChapter = null; ShowSelection(); return; }
             SelectedChapter = id; ClearMain(); main = Create("ChapterSelectPanel");
-            main.heading.text = chapter.title; main.detail.text = chapter.bodyPart;
+            main.heading.text = chapter.title;
+            if (main.detail) main.detail.gameObject.SetActive(false);
             main.progress.text = chapter.levelIds.Count(flow.Progress.IsCompleted) + " / " + chapter.levelIds.Count;
-            if (chapter.artwork) { main.artwork.sprite = chapter.artwork; main.artwork.color = Color.white; }
+            if (main.chapterScan)
+                main.chapterScan.Focus(chapterFocus.TryGetValue(id, out var point) ? point : chapter.bodyPosition);
+            else if (chapter.artwork) { main.artwork.sprite = chapter.artwork; main.artwork.color = Color.white; }
             Bind(main.back, () => { SelectedChapter = null; ShowSelection(); });
             main.itemTemplate.gameObject.SetActive(false);
             for (int i = 0; i < chapter.levelIds.Count; i++)
@@ -159,6 +181,16 @@ namespace Game.Runtime.Gameplay.Campaign
             v.music.onValueChanged.AddListener(x => { PlayerPrefs.SetFloat("MusicVolume", x); FindObjectOfType<AudioManager>()?.SetMusicVolume(x); });
             v.sfx.onValueChanged.AddListener(x => { PlayerPrefs.SetFloat("SFXVolume", x); FindObjectOfType<AudioManager>()?.SetSFXVolume(x); });
             Bind(v.primary, () => { PlayerPrefs.Save(); Close(v); });
+            Bind(v.secondary, () => Confirm("返回标题界面？", UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "Gameplay" ? "退出本局状态不会保存" : "已完成关卡的进度会保留。", () =>
+            {
+                PlayerPrefs.Save(); StopAllCoroutines(); dialogue = null; confirmingSkip = false;
+                foreach (var panel in modals.ToArray()) Close(panel);
+                SelectedChapter = null; flow.ReturnToTitle();
+            }));
+            Bind(v.back, flow.ConfirmQuit);
+#if UNITY_WEBGL && !UNITY_EDITOR
+            if (v.back) v.back.gameObject.SetActive(false);
+#endif
         }
         private void SaveRead(string id)
         {
@@ -166,7 +198,28 @@ namespace Game.Runtime.Gameplay.Campaign
             try { PlayerPrefs.SetString(ReadKey, JsonUtility.ToJson(new ReadState { ids = read.OrderBy(x => x).ToArray() })); PlayerPrefs.Save(); }
             catch (Exception e) { Debug.LogWarning("阅读记录本次仅保留在内存：" + e.Message); }
         }
+        public void ResetNarrativeHistory()
+        {
+            read.Clear(); historyWritable = true; SelectedChapter = null;
+            PlayerPrefs.DeleteKey(ReadKey);
+        }
         public void BeforeLevel(string id, Action finished) { StartCoroutine(PlayGroups(id, "BeforeLevel", finished)); }
+        public void BeforeLevelWhenReady(string id, Game.Runtime.Gameplay.LevelPlay.LevelPlayScreen screen)
+        {
+            SetLoading(true);
+            StartCoroutine(OpeningAfterBoardReady(id, screen));
+        }
+        private IEnumerator OpeningAfterBoardReady(string id, Game.Runtime.Gameplay.LevelPlay.LevelPlayScreen screen)
+        {
+            // sceneLoaded runs before Start builds the HUD. Keep input blocked through
+            // that build and the transition fade, then show dialogue over the board.
+            yield return null;
+            while (screen && (!screen.PresentationReady || (FindObjectOfType<Game.Runtime.Core.TransitionManager>() is var transition && transition && transition.IsTrasition)))
+                yield return null;
+            SetLoading(false);
+            if (!screen) yield break;
+            yield return PlayGroups(id, "BeforeLevel", null);
+        }
         public void AfterLevel(string id, Action finished)
         {
             StartCoroutine(PlayGroups(id, "AfterWin", () =>
@@ -204,7 +257,7 @@ namespace Game.Runtime.Gameplay.Campaign
                     int count = dialogue.body.textInfo.characterCount; float visible = 0;
                     while (!advance && !skip)
                     {
-                        if (Application.isFocused && !confirmingSkip)
+                        if (Application.isFocused && !confirmingSkip && modals.LastOrDefault() == dialogue)
                         {
                             visible = reveal ? count : Mathf.Min(count, visible + Time.unscaledDeltaTime * 30);
                             dialogue.body.maxVisibleCharacters = (int)visible;
@@ -220,7 +273,7 @@ namespace Game.Runtime.Gameplay.Campaign
         }
         private void AdvanceDialogue()
         {
-            if (!dialogue || confirmingSkip || dialogueInputFrame == Time.frameCount) return;
+            if (!dialogue || confirmingSkip || modals.LastOrDefault() != dialogue || dialogueInputFrame == Time.frameCount) return;
             dialogueInputFrame = Time.frameCount;
             if (dialogue.body.maxVisibleCharacters < dialogue.body.textInfo.characterCount) reveal = true;
             else advance = true;
@@ -235,6 +288,12 @@ namespace Game.Runtime.Gameplay.Campaign
         }
         private void Update()
         {
+            if (globalSettings)
+            {
+                globalSettings.transform.SetAsLastSibling();
+                bool gameplay = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "Gameplay";
+                globalSettings.gameObject.SetActive(!gameplay && !loading && !modals.Any(m => m && (m.name == "SettingsPanel" || m.name == "ConfirmPanel")));
+            }
             var keyboard = Keyboard.current; if (keyboard == null || !Application.isFocused || loading) return;
             if (dialogue && !confirmingSkip && (keyboard.spaceKey.wasPressedThisFrame || keyboard.enterKey.wasPressedThisFrame)) AdvanceDialogue();
             if (!keyboard.escapeKey.wasPressedThisFrame) return;

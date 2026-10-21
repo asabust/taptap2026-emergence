@@ -53,7 +53,7 @@ namespace Game.Runtime.Gameplay.LevelPlay
             counters.text = "演化  " + Session.Iteration + " / " + Session.IterationLimit + "     ·     分身  " + Session.LivingCloneCount + " / " + Session.CloneLimit;
             goals.text = DescribeGameObjectives();
             mode.text = paused ? "已暂停" : Session.Mode == LevelInteractionMode.PlaceClone ? "选择玩家周围高亮地块，放置分身"
-                : Session.Mode == LevelInteractionMode.RecycleClone ? "选择高亮分身，回收名额" : "方向键移动  ·  Space 演化  ·  B 分身  ·  Z 撤销";
+                : Session.Mode == LevelInteractionMode.RecycleClone ? "选择高亮分身，回收名额" : "方向键移动  ·  Space 演化  ·  B 分身  ·  N 回收  ·  Z 撤销";
             cancel.gameObject.SetActive(Session.Mode != LevelInteractionMode.Move && !paused);
             overlayText.text = paused ? "已暂停\n继续观察，或重新开始本关" : Session.Status == LevelPlayStatus.Won ? "目标已达成" : "演化次数已超限\n可撤销或重新开始";
             if (markedLevel != definition.id)
@@ -79,7 +79,7 @@ namespace Game.Runtime.Gameplay.LevelPlay
             var text = new StringBuilder();
             foreach (var goal in definition.winConditions.conditions)
             {
-                if (goal.type == LevelIds.ActorAtPosition) text.Append("抵达金色终点\n");
+                if (goal.type == LevelIds.ActorAtPosition) text.Append("抵达蓝色交叉终点\n");
                 else if (goal.type == LevelIds.CellCount) text.Append("存活细胞 ").Append(goal.@operator).Append(' ').Append(goal.value).Append("  ·  当前 ").Append(Session.State.Cells.Count).Append('\n');
                 else
                 {
@@ -99,7 +99,7 @@ namespace Game.Runtime.Gameplay.LevelPlay
             string text = "孤独死亡：" + (lonely ? "开启，少于 2 个邻居时死亡" : "关闭")
                 + "\n拥挤死亡：" + (crowded ? "开启，多于 3 个邻居时死亡" : "关闭")
                 + "\n局部繁殖：" + (birth ? "开启，玩家周围八格空地恰有 3 个邻居时生成普通细胞" : "关闭")
-                + "\n\n每次演化按旧状态同时结算八邻域。\n玩家参与邻居计算，自身不会死亡。\n\n分身：玩家周围八格、与玩家四向地形连通的空地，名额为同时存活数。\n提亮地块提示影响范围；墙和细胞本体不变色。\n回收：可选棋盘任意存活分身，不能回收初始细胞。\n\nSpace 演化 · B 分身 · Z 撤销上一轮 · R 重新开始\n方向键单次移动 · Esc 取消选择或暂停\n\n本关目标\n" + DescribeGoals(Session.State);
+                + "\n\n每次演化按旧状态同时结算八邻域。\n玩家参与邻居计算，自身不会死亡。\n\n分身：玩家周围八格、与玩家四向地形连通的空地，名额为同时存活数。\n浅色方砖为地面，深色方砖为墙；蓝色叉号为玩家终点。\nN 回收：上限为 1 时直接回收；上限大于 1 时点击选择，Esc 取消。不能回收初始普通细胞。\nZ 按倒序撤销演化、创建分身或回收，恢复该操作之前的棋盘；移动不单独计步。\n\nSpace 演化 · B 分身 · N 回收 · Z 撤销上一步 · R 重新开始\n方向键单次移动 · Esc 取消选择或暂停\n\n本关目标\n" + DescribeGoals(Session.State);
             CampaignRuntime.Instance.UI.ShowRules(text, CloseRules);
         }
         private void CloseRules()

@@ -23,6 +23,7 @@ namespace Game.Runtime.Gameplay.LevelPlay
             title = prefabView.title; counters = prefabView.counters; goals = prefabView.goals; mode = prefabView.mode;
             status = prefabView.status; overlayText = prefabView.overlayText; overlay = prefabView.overlay;
             undo = prefabView.undo; iterate = prefabView.iterate; clone = prefabView.clone; recycle = prefabView.recycle;
+            recycle.gameObject.SetActive(false);
             cancel = prefabView.cancel; pause = prefabView.pause; reset = overlayRetry = prefabView.retry;
             overlayContinue = prefabView.overlayContinue; overlayBack = prefabView.back;
             victoryCard = prefabView.victory; progressMarks = prefabView.progressMarks;
@@ -46,6 +47,7 @@ namespace Game.Runtime.Gameplay.LevelPlay
             prefabView.failure.secondary.onClick.AddListener(ResetFromPanel);
             prefabView.failure.back.onClick.AddListener(() => CampaignRuntime.Instance.UI.Confirm("返回章节选关？", "退出本局状态不会保存", LeaveGame));
             victoryCard.SetActive(false);
+            AudioManager.AttachUI(prefabView.gameObject);
             CampaignUI.EnsureInput();
         }
         private void ResetFromPanel()

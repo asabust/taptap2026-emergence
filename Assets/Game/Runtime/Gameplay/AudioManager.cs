@@ -1,132 +1,72 @@
-// AudioManager.cs
-
 using Game.Runtime.Core;
 using Game.Runtime.Data;
 using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
+using Game.Runtime.Gameplay.Campaign;
 
 public class AudioManager : Singleton<AudioManager>
 {
-    public const string SFXVolumeKey = "SFXVolume";
-    public const string MusicVolumeKey = "MusicVolume";
-
-    [Header("音频数据")]
-    public AudioInfoListSO audioInfoListSO;
-
-    [Header("Audio Sources")]
-    public AudioSource musicSource;
-    public AudioSource sfxSource;
-
-    // 音量设置
-    private float _musicVolume = 1f;
-    private float _sfxVolume = 1f;
-
+    public const string SFXVolumeKey = "SFXVolume", MusicVolumeKey = "MusicVolume";
+    [Header("音频数据")] public AudioInfoListSO audioInfoListSO;
+    [Header("Audio Sources")] public AudioSource musicSource, sfxSource;
+    private float musicVolume = 1, sfxVolume = 1;
     private AudioName currentMusic;
-    private AudioName currentSFX;
 
-    void Start()
+    protected override void Awake()
     {
-        LoadAudioSettings();
+        base.Awake();
+        if (!musicSource) musicSource = gameObject.AddComponent<AudioSource>();
+        if (!sfxSource || sfxSource == musicSource) sfxSource = gameObject.AddComponent<AudioSource>();
+        musicSource.playOnAwake = sfxSource.playOnAwake = false;
+        musicSource.spatialBlend = sfxSource.spatialBlend = 0;
+        musicSource.Stop(); sfxSource.Stop(); sfxSource.loop = false;
+        musicVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(MusicVolumeKey, 1));
+        sfxVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(SFXVolumeKey, 1));
+        UpdateAudioVolumes();
     }
-
-    void OnSceneLoaded(string sceneName)
+    private void OnEnable() { SceneManager.sceneLoaded += OnSceneLoaded; }
+    private void OnDisable() { SceneManager.sceneLoaded -= OnSceneLoaded; }
+    private void Start() { RouteMusic(SceneManager.GetActiveScene().name); }
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode) { RouteMusic(scene.name); }
+    private void RouteMusic(string scene)
     {
-        var manager = GameManager.Instance;
-        PlayMusic(manager && manager.IsGameplay ? AudioName.BGM : AudioName.None);
+        if (scene == "Gameplay") PlayMusic(AudioName.BGM);
+        else if (scene == "TitleScene" || scene == "LevelSelect") PlayMusic(AudioName.MenuBGM);
     }
-
     public void PlayMusic(AudioName name)
     {
         if (!musicSource) return;
-        if (name == AudioName.None)
-        {
-            musicSource.Stop();
-            currentMusic = AudioName.None;
-            return;
-        }
-
-        if (name == currentMusic)
-        {
-            return;
-        }
-
-        AudioInf musicInfo = audioInfoListSO ? audioInfoListSO.GetAudioInfo(name) : null;
-        if (musicInfo == null || !musicInfo.clip)
-        {
-            musicSource.Stop();
-            currentMusic = AudioName.None;
-            return;
-        }
-        currentMusic = name;
-        musicSource.clip = musicInfo.clip;
-        musicSource.volume = musicInfo.volume * _musicVolume;
-        musicSource.loop = musicInfo.loop;
-        musicSource.Play();
+        if (name == currentMusic && musicSource.isPlaying) return;
+        var info = audioInfoListSO ? audioInfoListSO.GetAudioInfo(name) : null;
+        if (name == AudioName.None || info == null || !info.clip)
+        { musicSource.Stop(); currentMusic = AudioName.None; return; }
+        currentMusic = name; musicSource.clip = info.clip; musicSource.loop = info.loop;
+        UpdateAudioVolumes(); musicSource.Play();
     }
-
-
     public void PlaySFX(AudioName name)
     {
         if (!sfxSource) return;
-        if (name == AudioName.None)
-        {
-            sfxSource.Stop();
-            return;
-        }
-
-        if (sfxSource.isPlaying && currentSFX == name)
-        {
-            return;
-        }
-
-        AudioInf audioInf = audioInfoListSO ? audioInfoListSO.GetAudioInfo(name) : null;
-        if (audioInf == null || !audioInf.clip) return;
-        currentSFX = name;
-        sfxSource.clip = audioInf.clip;
-        sfxSource.volume = audioInf.volume * _sfxVolume;
-        sfxSource.loop = audioInf.loop;
-        sfxSource.Play();
-        //sfxSource.PlayOneShot(audioInf.clip, audioInf.volume * _sfxVolume);
+        if (name == AudioName.None) { sfxSource.Stop(); return; }
+        var info = audioInfoListSO ? audioInfoListSO.GetAudioInfo(name) : null;
+        if (info == null || !info.clip) return;
+        // One-shots overlap, so footsteps and clicks cannot cut off the victory cue.
+        sfxSource.PlayOneShot(info.clip, info.volume);
     }
-
-    public void SetMusicVolume(float volume)
-    {
-        _musicVolume = Mathf.Clamp01(volume);
-        UpdateAudioVolumes();
-        PlayerPrefs.SetFloat(MusicVolumeKey, _musicVolume);
-    }
-
-    public void SetSFXVolume(float volume)
-    {
-        _sfxVolume = Mathf.Clamp01(volume);
-        UpdateAudioVolumes();
-        PlayerPrefs.SetFloat(SFXVolumeKey, _sfxVolume);
-    }
-
+    public void SetMusicVolume(float value)
+    { musicVolume = Mathf.Clamp01(value); PlayerPrefs.SetFloat(MusicVolumeKey, musicVolume); UpdateAudioVolumes(); }
+    public void SetSFXVolume(float value)
+    { sfxVolume = Mathf.Clamp01(value); PlayerPrefs.SetFloat(SFXVolumeKey, sfxVolume); UpdateAudioVolumes(); }
     private void UpdateAudioVolumes()
     {
-        //Debug.Log($"Music Volume: {_musicVolume} | sfxSource:{_sfxVolume}");
-        if (musicSource != null)
-            musicSource.volume = _musicVolume;
-
-        if (sfxSource != null)
-            sfxSource.volume = _sfxVolume;
+        var info = audioInfoListSO ? audioInfoListSO.GetAudioInfo(currentMusic) : null;
+        if (musicSource) musicSource.volume = musicVolume * (info != null ? info.volume : 1);
+        if (sfxSource) sfxSource.volume = sfxVolume;
     }
-
-    private void LoadAudioSettings()
+    public static void Emit(AudioName name) { FindObjectOfType<AudioManager>()?.PlaySFX(name); }
+    public static void AttachUI(GameObject root)
     {
-        _musicVolume = PlayerPrefs.GetFloat(MusicVolumeKey, 1f);
-        _sfxVolume = PlayerPrefs.GetFloat(SFXVolumeKey, 1f);
-
-        UpdateAudioVolumes();
-    }
-
-    private void OnEnable()
-    {
-        EventHandler.AfterSceneLoadEvent += OnSceneLoaded;
-    }
-
-    private void OnDisable()
-    {
-        EventHandler.AfterSceneLoadEvent -= OnSceneLoaded;
+        foreach (var button in root.GetComponentsInChildren<Button>(true))
+            if (!button.GetComponent<UISoundFeedback>()) button.gameObject.AddComponent<UISoundFeedback>();
     }
 }

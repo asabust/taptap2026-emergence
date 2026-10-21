@@ -17,7 +17,8 @@ namespace Game.Runtime.Gameplay.Levels
         private readonly bool crowdedDeath;
         private LevelState state;
         private readonly LevelState initialState;
-        private readonly List<LevelState> history = new List<LevelState>();
+        private sealed class UndoEntry { public LevelState State; public string Action; }
+        private readonly List<UndoEntry> history = new List<UndoEntry>();
         public const int HistoryCapacity = 100;
 
         // Return copies so UI and editor code cannot bypass the operation contract.
@@ -134,11 +135,20 @@ namespace Game.Runtime.Gameplay.Levels
             if (!CanOperate(out message)) return false;
             if (Mode != LevelInteractionMode.PlaceClone) return Reject("Enter clone placement first.", out message);
             if (!CanPlaceCloneAt(x, y)) return Reject("Select an adjacent empty floor tile within the clone limit.", out message);
+            SaveHistory("Clone creation");
             state.Cells.Add(new LivingCellState { X = x, Y = y, IsClone = true });
             Mode = LevelInteractionMode.Move;
             EvaluateGoals();
             message = "Clone created.";
             return true;
+        }
+
+        public bool TryRecycleOrSelect(out string message)
+        {
+            if (!TryBeginRecycling(out message)) return false;
+            if (CloneLimit != 1) return true;
+            var clone = state.Cells.Find(c => c.IsClone);
+            return TryRecycleClone(clone.X, clone.Y, out message);
         }
 
         public bool TryBeginRecycling(out string message)
@@ -156,6 +166,7 @@ namespace Game.Runtime.Gameplay.Levels
             if (Mode != LevelInteractionMode.RecycleClone) return Reject("Enter recycling first.", out message);
             var cell = CellAt(x, y);
             if (cell == null || !cell.IsClone) return Reject("Only living clones can be recycled.", out message);
+            SaveHistory("Clone recycling");
             state.Cells.Remove(cell);
             Mode = LevelInteractionMode.Move;
             EvaluateGoals();
@@ -167,12 +178,13 @@ namespace Game.Runtime.Gameplay.Levels
 
         public bool TryUndo(out string message)
         {
-            if (!CanUndo) return Reject("No iteration history to undo.", out message);
-            state = history[history.Count - 1].DeepCopy();
+            if (!CanUndo) return Reject("No action history to undo.", out message);
+            var entry = history[history.Count - 1];
+            state = entry.State.DeepCopy();
             history.RemoveAt(history.Count - 1);
             Mode = LevelInteractionMode.Move;
             EvaluateGoals();
-            message = "Iteration undone.";
+            message = entry.Action + " undone.";
             return true;
         }
 
@@ -215,11 +227,16 @@ namespace Game.Runtime.Gameplay.Levels
                 }
             state.Cells = survivors;
             state.Iteration++;
-            if (history.Count == HistoryCapacity) history.RemoveAt(0);
-            history.Add(snapshot);
+            SaveHistory("Iteration", snapshot);
             EvaluateGoals();
             message = "Iterated.";
             return true;
+        }
+
+        private void SaveHistory(string action, LevelState snapshot = null)
+        {
+            if (history.Count == HistoryCapacity) history.RemoveAt(0);
+            history.Add(new UndoEntry { State = snapshot ?? state.DeepCopy(), Action = action });
         }
 
         private void EvaluateGoals()

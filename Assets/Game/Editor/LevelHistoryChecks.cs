@@ -43,27 +43,30 @@ namespace Game.Editor
             checks = 0;
             var level = Board(); var s = new LevelPlaySession(level);
             Check(!s.CanUndo && s.HistoryCount == 0, "new session has no history");
-            s.TryMove(1, 0, out _); Clone(s, 2, 2); string before = Layout(s);
-            Check(!s.TryUndo(out _) && Layout(s) == before && s.HistoryCount == 0, "round zero undo never reverses movement or cloning");
+            s.TryMove(1, 0, out _); string moved = Layout(s); Clone(s, 2, 2);
+            Check(s.CanUndo && s.HistoryCount == 1, "creating clone before first iteration creates history");
+            Check(s.TryUndo(out _) && Layout(s) == moved && !s.CanUndo, "undo clone restores quota and preserves moves before creation");
+            Clone(s, 2, 2); string withClone = Layout(s);
             s.TryBeginRecycling(out _); s.TryRecycleClone(2, 2, out _);
-            Check(s.HistoryCount == 0, "recycling does not create history");
-            s.TryBeginClonePlacement(out _); before = Layout(s);
-            Check(!s.TryIterate(out _) && s.HistoryCount == 0 && Layout(s) == before, "blocked iteration creates no snapshot");
-            s.CancelSelection(); Clone(s, 2, 2); before = Layout(s); Iterate(s);
-            Check(s.HistoryCount == 1 && s.CanUndo && s.Iteration == 1, "successful iteration records one previous state");
-            s.TryBeginRecycling(out _); s.TryRecycleClone(2, 2, out _); Clone(s, 3, 1); s.TryMove(-1, 0, out _);
-            Check(s.HistoryCount == 1, "post-iteration actions do not add history");
-            Check(s.TryUndo(out _) && Layout(s) == before && s.LivingCloneCount == 1 && s.HistoryCount == 0,
-                "undo restores clone A, removes B and restores pre-iteration player position");
-            Check(s.State.Cells.Count(c => c.IsClone && c.X == 2 && c.Y == 2) == 1
-                && s.State.Cells.Any(c => !c.IsClone && c.X == 3 && c.Y == 3), "undo preserves clone versus initial cell provenance");
-            Iterate(s); s.TryMove(-1, 0, out _); string round1 = Layout(s); Iterate(s);
-            var copy = s.State; copy.Cells.Clear(); copy.PlayerX = 99;
-            s.TryMove(0, -1, out _);
-            Check(s.TryUndo(out _) && Layout(s) == round1 && s.HistoryCount == 1, "latest snapshot independent of returned state and later movement");
-            Check(s.TryUndo(out _) && Layout(s) == before && s.Iteration == 0, "older snapshot independent of newer restore");
-            Iterate(s); s.TryUndo(out _); s.TryMove(0, -1, out _); string branch = Layout(s); Iterate(s); s.TryUndo(out _);
-            Check(Layout(s) == branch && !s.CanUndo, "undo then iterate creates a new branch without future history");
+            Check(s.HistoryCount == 2 && s.TryUndo(out _) && Layout(s) == withClone, "undo recycling restores clone provenance and quota");
+            int count = s.HistoryCount; s.TryBeginClonePlacement(out _); string before = Layout(s);
+            Check(!s.TryIterate(out _) && s.HistoryCount == count && Layout(s) == before, "blocked iteration creates no snapshot");
+            s.CancelSelection(); Iterate(s); string evolved = Layout(s);
+            s.TryBeginRecycling(out _); s.TryRecycleClone(2, 2, out _); string recycled = Layout(s);
+            Clone(s, 3, 1); s.TryMove(-1, 0, out _);
+            Check(s.TryUndo(out _) && Layout(s) == recycled, "mixed undo first removes newest clone and its later movement");
+            Check(s.TryUndo(out _) && Layout(s) == evolved, "mixed undo next restores recycled clone after iteration");
+            Check(s.TryUndo(out _) && Layout(s) == before && s.Iteration == 0, "mixed undo finally restores pre-iteration board");
+            Check(s.State.Cells.Any(c => c.IsClone && c.X == 2 && c.Y == 2)
+                && s.State.Cells.Any(c => !c.IsClone && c.X == 3 && c.Y == 3), "mixed undo preserves ordinary cell provenance");
+            Check(s.TryUndo(out _) && Layout(s) == moved && !s.CanUndo, "mixed undo can reach before first clone");
+            s.Reset(); s.TryMove(1,0,out _); before = Layout(s); Iterate(s);
+            s.TryMove(-1,0,out _); string round1 = Layout(s); Iterate(s);
+            var copy = s.State; copy.Cells.Clear(); copy.PlayerX = 99; s.TryMove(0,-1,out _);
+            Check(s.TryUndo(out _) && Layout(s) == round1 && s.HistoryCount == 1, "snapshot isolated from caller mutations and later movement");
+            Check(s.TryUndo(out _) && Layout(s) == before && !s.CanUndo, "older iteration snapshot remains isolated");
+            Iterate(s); s.TryUndo(out _); s.TryMove(0,-1,out _); string branch = Layout(s); Iterate(s); s.TryUndo(out _);
+            Check(Layout(s) == branch && !s.CanUndo, "undo and new action discard future branch");
             s.TryBeginClonePlacement(out _); s.Reset();
             Check(s.Mode == LevelInteractionMode.Move && s.Iteration == 0 && s.HistoryCount == 0 && s.LivingCloneCount == 0
                 && s.State.PlayerX == 1 && s.State.PlayerY == 1 && s.State.Cells.Single().X == 3, "reset restores initial cells, player and clean mode/history");
@@ -129,13 +132,33 @@ namespace Game.Editor
             Check(Frame(controller, 14, LevelPlayCommand.Cancel, LevelPlayCommand.Right) && !controller.Paused && Layout(s) == before, "resume does not execute movement in same frame");
             Frame(controller, 15, LevelPlayCommand.Iterate); Frame(controller, 16, LevelPlayCommand.Recycle);
             Frame(controller, 17, LevelPlayCommand.Cancel); Frame(controller, 18, LevelPlayCommand.Undo);
-            Check(s.LivingCloneCount == 1 && s.Mode == LevelInteractionMode.Move && !s.CanUndo, "controller routes undo through same session");
+            Check(s.LivingCloneCount == 1 && s.Mode == LevelInteractionMode.Move && s.CanUndo, "controller preserves earlier clone history after undoing iteration");
             Frame(controller, 19, LevelPlayCommand.Reset);
             Check(s.LivingCloneCount == 0 && s.Iteration == 0 && !s.CanUndo, "controller reset uses same session initial state");
             level = Board(); level.iterationLimit = 1; s = new LevelPlaySession(level); controller = new LevelPlayController(s);
             Frame(controller, 0, LevelPlayCommand.Iterate); Frame(controller, 1, LevelPlayCommand.Iterate); before = Layout(s);
             Check(!Frame(controller, 2, LevelPlayCommand.Up, LevelPlayCommand.Clone) && Layout(s) == before, "failure locks normal controller inputs");
             Check(Frame(controller, 3, LevelPlayCommand.Undo) && s.Status == LevelPlayStatus.Playing, "failure accepts undo through controller");
+            level = Board(); level.cloneLimit = 1; s = new LevelPlaySession(level); Clone(s,0,0);
+            controller = new LevelPlayController(s);
+            Check(Frame(controller,0,LevelPlayCommand.Recycle) && s.LivingCloneCount == 0 && s.Mode == LevelInteractionMode.Move,
+                "N directly recycles when configured limit is one");
+            Check(Frame(controller,1,LevelPlayCommand.Undo) && s.LivingCloneCount == 1 && s.Iteration == 0,
+                "Z restores directly recycled clone before any iteration");
+            Check(Frame(controller,2,LevelPlayCommand.Undo) && s.LivingCloneCount == 0 && !s.CanUndo,
+                "second Z undoes original clone creation");
+            before = Layout(s);
+            Check(!Frame(controller,3,LevelPlayCommand.Recycle) && Layout(s) == before && !s.CanUndo,
+                "N with no living clone does not add history");
+            level = Board(); level.cloneLimit = 2; s = new LevelPlaySession(level); Clone(s,0,0);
+            controller = new LevelPlayController(s);
+            Check(Frame(controller,0,LevelPlayCommand.Recycle) && s.Mode == LevelInteractionMode.RecycleClone && s.LivingCloneCount == 1,
+                "multiple clone limit still asks selection even if only one currently lives");
+            before = Layout(s); int history = s.HistoryCount;
+            Check(!controller.ProcessFrame(1,new[]{new LevelPlayRequest(LevelPlayCommand.Select,3,3)},out _) && Layout(s)==before && s.HistoryCount==history,
+                "invalid recycle target cannot delete ordinary cell or add history");
+            Check(Frame(controller,2,LevelPlayCommand.Undo) && s.Mode == LevelInteractionMode.Move && s.LivingCloneCount==0,
+                "Z works in selection mode and exits selection");
             return checks;
         }
 #if UNITY_EDITOR

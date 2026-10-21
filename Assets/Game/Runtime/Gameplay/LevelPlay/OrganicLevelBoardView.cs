@@ -14,6 +14,7 @@ namespace Game.Runtime.Gameplay.LevelPlay
     {
         [Range(.02f,.5f)] public float fusion = .3f;
         public bool styledTerrain;
+        public Texture2D goalIcon;
         public const float TerrainPadding = .7f;
         public event Action<int,int> CellClicked;
         public event Action AnimationCompleted;
@@ -73,6 +74,7 @@ namespace Game.Runtime.Gameplay.LevelPlay
                     if (session.CanPlaceCloneAt(x,y)) boardPixels[x+y*width].a = 1;
             if (session.Mode == LevelInteractionMode.RecycleClone)
                 foreach (var cell in state.Cells) if(cell.IsClone) boardPixels[cell.X+cell.Y*width].a = 1;
+            material.SetFloat("_RecycleSelection",session.Mode == LevelInteractionMode.RecycleClone ? 1 : 0);
             boardTexture.SetPixels(boardPixels); boardTexture.Apply(false,false);
             material.SetVector("_InfluencePlayer", new Vector4(state.PlayerX, state.PlayerY, 0, 0));
             Upload();
@@ -104,6 +106,8 @@ namespace Game.Runtime.Gameplay.LevelPlay
             material = new Material(shader) { name = "Organic Play Board (Runtime)" };
             lifeTexture = Texture(w,h); boardTexture=Texture(w,h);
             lifePixels = new Color[w*h]; boardPixels = new Color[w*h];
+            material.SetTexture("_GoalTex",goalIcon);
+            material.SetFloat("_HasGoalIcon",goalIcon ? 1 : 0);
             material.SetTexture("_LifeTex",lifeTexture); material.SetTexture("_BoardTex",boardTexture);
             material.SetVector("_GridSize",new Vector4(w,h,0,0));
             material.SetFloat("_StyledTerrain", styledTerrain ? 1 : 0);

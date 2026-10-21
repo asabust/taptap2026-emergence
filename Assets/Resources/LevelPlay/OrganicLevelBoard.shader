@@ -3,6 +3,7 @@ Shader "CellFusion/OrganicLevelBoard"
     Properties
     {
         [PerRendererData] _MainTex("Texture", 2D) = "white" {}
+        [HideInInspector] _GoalTex("Goal icon", 2D) = "black" {}
         [HideInInspector] _LifeTex("Life state", 2D) = "black" {}
         [HideInInspector] _BoardTex("Terrain and goals", 2D) = "black" {}
         [HideInInspector] _GridSize("Grid size", Vector) = (1,1,0,0)
@@ -34,10 +35,10 @@ Shader "CellFusion/OrganicLevelBoard"
             #pragma multi_compile_local _ UNITY_UI_CLIP_RECT
             #include "UnityCG.cginc"
             #include "UnityUI.cginc"
-            sampler2D _LifeTex, _BoardTex;
+            sampler2D _LifeTex, _BoardTex, _GoalTex;
             float4 _GridSize, _Player, _PlayerTail, _PlayerPrevious, _Color, _ClipRect, _ViewBounds;
             float4 _InfluencePlayer;
-            float _Fusion, _Progress, _StyledTerrain, _BoardPadding, _FlowTime;
+            float _Fusion, _Progress, _StyledTerrain, _BoardPadding, _FlowTime, _HasGoalIcon, _RecycleSelection;
             struct Attributes { float4 vertex : POSITION; float2 uv : TEXCOORD0; float4 color : COLOR; };
             struct Varyings { float4 vertex : SV_POSITION; float2 uv : TEXCOORD0; float4 color : COLOR; float4 local : TEXCOORD1; };
             Varyings Vert(Attributes v)
@@ -55,14 +56,9 @@ Shader "CellFusion/OrganicLevelBoard"
             }
             float TerrainShape(float2 delta, float2 cell)
             {
-                float seed = dot(cell, float2(1.73, 2.61));
-                // A gentle six-second pulse, with nearby tiles slightly out of phase.
-                float breath = 1 + .035 * sin(_FlowTime * 1.05 + seed * .20);
-                delta /= breath;
-                delta += .01 * float2(sin(delta.y * 8 + _FlowTime * .65 + seed), cos(delta.x * 7 - _FlowTime * .5 + seed));
-                float2 rotated = float2(delta.x + delta.y, delta.y - delta.x) * .70710678;
-                float2 q = abs(rotated) - .20;
-                return (length(max(q, 0)) + min(max(q.x, q.y), 0) - .20) * breath;
+                // Fixed, axis-aligned paving tiles with a narrow grout gap.
+                float2 q = abs(delta) - .455;
+                return length(max(q, 0)) + min(max(q.x, q.y), 0) - .015;
             }
             void TerrainField(float2 p, out float distanceToTerrain, out float shadowDistance)
             {
@@ -117,7 +113,9 @@ Shader "CellFusion/OrganicLevelBoard"
                     float clone = lerp(data.b, data.a, eased);
                     float3 cellColor = lerp(float3(.455,.486,.737), float3(.329,.329,.706),clone);
                     if (_StyledTerrain > .5) cellColor = lerp(float3(.455,.486,.737), float3(.329,.329,.706), clone);
-                    Merge(length(p-center)-.50*life, cellColor, d, tint);
+                    float breath = 1 + .025 * sin(_FlowTime * 1.5 + dot(cell, float2(1.73,2.61)));
+                    float radius = .50 * lerp(breath, 1, clone);
+                    Merge(length(p-center)-radius*life, cellColor, d, tint);
                     // Broad normalized pigment fields let colour diffuse through the
                     // connected body independently of the narrow membrane blend.
                     float colourWeight = exp(-dot(p-center,p-center)/.55) * life;
@@ -154,7 +152,6 @@ Shader "CellFusion/OrganicLevelBoard"
                 float playerNucleus = exp(-dot(p-_Player.xy,p-_Player.xy)/0.012);
                 color = lerp(color,float3(.58,.32,.13),playerNucleus);
                 float ring = 1-smoothstep(0.02,0.02+aa,abs(length(p-tile)-0.31));
-                if (ground.g > 0.5) color = lerp(color,float3(0.85,0.62,0.16),ring);
                 if (ground.b > 0.5) color = lerp(color,float3(0.58,0.3,0.8),ring);
                 float selection = 1-smoothstep(0.018,0.018+aa,abs(max(abs(p.x-tile.x),abs(p.y-tile.y))-0.43));
                 color = lerp(color,float3(1,0.75,0.04),selection*ground.a);
@@ -166,13 +163,10 @@ Shader "CellFusion/OrganicLevelBoard"
                     float terrainAlpha = 1 - smoothstep(-terrainAA, terrainAA, terrainD);
                     float shadow = (1 - smoothstep(-.025, .15, shadowD)) * .23;
                     float gradient = saturate(input.uv.x * .55 + input.uv.y * .45);
-                    float3 terrainColor = lerp(float3(.75,.82,.86), float3(.58,.59,.72), gradient);
-                    terrainColor += .035 * (1 - saturate(length(p-tile)*1.5));
-                    if (ground.r > .25 && ground.r < .75) terrainColor = lerp(terrainColor, float3(.43,.47,.57), .65);
-                    terrainColor = lerp(terrainColor, float3(1,1,1), influence * (1-inside) * .40);
+                    float3 floorColor = lerp(float3(.91,.95,.98), float3(.70,.77,.88), gradient);
+                    float3 terrainColor = ground.r > .75 ? floorColor : float3(.28,.34,.46);
                     // Cells are a separate foreground surface, never clipped by terrain.
                     float3 litTerrain = terrainColor;
-                    if (ground.g > .5) litTerrain = lerp(litTerrain, float3(.83,.64,.34), ring * .9);
                     if (ground.b > .5) litTerrain = lerp(litTerrain, float3(.65,.52,.81), ring * .85);
                     float outline = 1-smoothstep(.012,.012+terrainAA,abs(terrainD+.035));
                     litTerrain = lerp(litTerrain, float3(.98,.85,.49), outline*ground.a);
@@ -194,6 +188,28 @@ Shader "CellFusion/OrganicLevelBoard"
                     #ifndef UNITY_COLORSPACE_GAMMA
                     color = GammaToLinearSpace(color);
                     #endif
+                }
+                if (_RecycleSelection > .5 && ground.a > .5)
+                {
+                    // Draw over the cell surface; a terrain-only ring is hidden by the clone.
+                    float radius = length(p-tile);
+                    float border = 1-smoothstep(.026,.026+aa,abs(radius-.45));
+                    float innerBorder = 1-smoothstep(.014,.014+aa,abs(radius-.405));
+                    color = lerp(color,float3(.025,.13,.8),border);
+                    color = lerp(color,float3(1,1,1),innerBorder);
+                    alpha = max(alpha,max(border,innerBorder));
+                }
+                if (ground.g > .5)
+                {
+                    float2 goalUV = (p - tile) / .88 + .5;
+                    float inIcon = all(goalUV >= 0) && all(goalUV <= 1) ? 1 : 0;
+                    float4 goal = tex2D(_GoalTex, saturate(goalUV));
+                    float cross = 1-smoothstep(.055,.08,min(abs(p.x-tile.x+p.y-tile.y),abs(p.x-tile.x-p.y+tile.y)));
+                    float goalAlpha = lerp(cross,goal.a,_HasGoalIcon) * inIcon;
+                    float3 goalColor = lerp(float3(.08,.22,.95),goal.rgb,_HasGoalIcon);
+                    float combined = goalAlpha + alpha * (1-goalAlpha);
+                    color = (goalColor * goalAlpha + color * alpha * (1-goalAlpha)) / max(combined,.001);
+                    alpha = combined;
                 }
                 half4 result = half4(color,alpha)*input.color;
                 #ifdef UNITY_UI_CLIP_RECT

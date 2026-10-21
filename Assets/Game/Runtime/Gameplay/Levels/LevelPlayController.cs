@@ -40,7 +40,7 @@ namespace Game.Runtime.Gameplay.Levels
                 case LevelPlayCommand.Pause:
                     Session.CancelSelection(); Paused = !Paused; message = Paused ? "Paused." : "Resumed."; return true;
                 case LevelPlayCommand.Clone: return Session.TryBeginClonePlacement(out message);
-                case LevelPlayCommand.Recycle: return Session.TryBeginRecycling(out message);
+                case LevelPlayCommand.Recycle: return Session.TryRecycleOrSelect(out message);
                 case LevelPlayCommand.Iterate: return Session.TryIterate(out message);
                 case LevelPlayCommand.Up: return Session.TryMove(0, 1, out message);
                 case LevelPlayCommand.Right: return Session.TryMove(1, 0, out message);
@@ -59,7 +59,7 @@ namespace Game.Runtime.Gameplay.Levels
             if (Paused) return command == LevelPlayCommand.Pause || command == LevelPlayCommand.Cancel;
             if (Session.Status != LevelPlayStatus.Playing) return command == LevelPlayCommand.Reset || command == LevelPlayCommand.Undo;
             if (command == LevelPlayCommand.Cancel || command == LevelPlayCommand.Pause) return true;
-            if (Session.Mode != LevelInteractionMode.Move) return command == LevelPlayCommand.Select;
+            if (Session.Mode != LevelInteractionMode.Move) return command == LevelPlayCommand.Select || command == LevelPlayCommand.Undo;
             return command != LevelPlayCommand.Select;
         }
     }
