@@ -56,10 +56,13 @@ Shader "CellFusion/OrganicLevelBoard"
             float TerrainShape(float2 delta, float2 cell)
             {
                 float seed = dot(cell, float2(1.73, 2.61));
-                delta += .025 * float2(sin(delta.y * 8 + _FlowTime * .65 + seed), cos(delta.x * 7 - _FlowTime * .5 + seed));
+                // A gentle six-second pulse, with nearby tiles slightly out of phase.
+                float breath = 1 + .035 * sin(_FlowTime * 1.05 + seed * .20);
+                delta /= breath;
+                delta += .01 * float2(sin(delta.y * 8 + _FlowTime * .65 + seed), cos(delta.x * 7 - _FlowTime * .5 + seed));
                 float2 rotated = float2(delta.x + delta.y, delta.y - delta.x) * .70710678;
                 float2 q = abs(rotated) - .20;
-                return length(max(q, 0)) + min(max(q.x, q.y), 0) - .20;
+                return (length(max(q, 0)) + min(max(q.x, q.y), 0) - .20) * breath;
             }
             void TerrainField(float2 p, out float distanceToTerrain, out float shadowDistance)
             {
