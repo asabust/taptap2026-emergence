@@ -1,5 +1,25 @@
 # 实现状态与阶段交接
 
+## 2026-11-03 结项仓库核对
+
+项目已结项。当前使用入口见 [README](../README.md)，玩法／正式流程／UI 配置分别见 [LevelPlayQuickStart](LevelPlayQuickStart.md)、[CampaignQuickStart](CampaignQuickStart.md)、[UIEditingQuickStart](UIEditingQuickStart.md)。下方原有记录按发生时保留：旧通过数、待办、颜色、样例位置和操作规则都只代表相应时间点，不得当作当前状态，也不构成新的执行或提交指令。
+
+当前差异已核对：
+
+- 正式 Catalog 为五章 18 关（001／002、101–104、201–204、301–304、401–404），stage6_probe 仅保留在 Docs/Tests/Fixtures，202 已有目标。
+- 标题新游戏／继续分开；新游戏确认后重置完成与阅读记录，音量保留。继续回选关，不续局内棋盘。
+- UI 使用 Resources/UI Prefab；人体节点对应章节，章节圆形透视后显示小关列表。
+- 三个演化规则独立，localBirth 缺失即关闭。Z 对成功迭代、创建、回收分别保存快照，最近 100 次；移动不单独记步。N 按配置额度决定直接回收或点选。
+- 胜利面板继续后依次播放未读关后对话、未读已解锁章档案再返回；章内返回章节列表，章完成返回总览。剧情／教程无回顾入口，章档案可回看。
+- 当前正式地砖为静态方形渐变、蓝色交叉终点，玩家柔橙、普通细胞蓝紫，保留融合和移动／生灭过渡；此前菱形流动及冷色玩家方案已被替代。
+- 正式源表为 Docs/GameData/Database.xlsx，经 Docs/Tools/import-ui-database.py 导出 Narrative.json，再用 Create Editable UI 同步目录；遗留空表框架不是正式叙事入口。
+
+本次实际执行：数据 47、编辑 33、配置 38、玩法 80、历史／输入 53、试玩 15、进度 37、棋盘 12，共 **315 项通过**；相关 Editor／Player 分支独立 C# 编译通过。只更新文档，未重新执行 Unity Play Mode、Shader 检查或平台打包，不据此声称全部正式关卡可解或完整章末流程通过。
+
+代码审阅发现：CampaignIntegrationChecks 仍查找旧运行时对象名称（`Victory Card`、`返回人体图`），当前正式界面已迁移为 Prefab。该菜单尚未在本次执行，需先适配当前 UI 后再用作可靠的正式流程验收；历史 PASS 只描述当时实现。
+
+## 以下为历史实现与验证记录
+
 ## 2026-10-19：独立编辑器退出入口
 
 用户反馈 Mac 构建可以编辑和保存，当前以全屏运行。右侧配置滚动栏底部新增“退出编辑器”，与常用编辑操作分隔，始终复用确认弹窗；存在未保存编辑或未应用输入时明确提示丢失风险。取消保留草稿，确认后独立构建调用 Application.Quit，Unity Editor 中结束 Play Mode。试玩期间需先返回编辑。
@@ -8,7 +28,7 @@
 
 更新：2026-10-19
 
-## 当前总览
+## 2026-10-19 阶段总览（历史）
 
 阶段 7 首版流程已实现并通过 Unity Play Mode 场景集成检查，详见文末新增记录；独立平台构建仍待验证。用户已反馈关卡编辑器测试暂未发现问题、Mac 独立包可以编辑保存。此前阶段历史如下。
 
@@ -119,7 +139,7 @@ WebGL／Android 的 StreamingAssets 读取需要后续平台适配；`DeveloperD
 - 中文字体字符表已检查，当前界面源码中的汉字均存在于所选字体图集中。
 - 自动化连接 Unity 后未显示新菜单，截图不可用，未运行新场景或验证可视点击。不能将独立 C# 编译视为 Unity 内场景验收；下一步按快速说明复查。
 
-操作与手动验收见 [LevelEditorQuickStart.md](/Users/aoi/UnityProjects/taptap2026-emergence/Docs/LevelEditorQuickStart.md)。阶段 2 当时没有保存 UI；现已由阶段 3 接入保存、仓库、规则与额度、条件参数面板。退出 Play 仍会丢失未保存草稿，正式谜题需待玩法验证。
+操作与手动验收见 [LevelEditorQuickStart.md](LevelEditorQuickStart.md)。阶段 2 当时没有保存 UI；现已由阶段 3 接入保存、仓库、规则与额度、条件参数面板。退出 Play 仍会丢失未保存草稿，正式谜题需待玩法验证。
 
 
 ## 阶段 3：编辑器配置与文件操作
@@ -152,7 +172,7 @@ WebGL／Android 的 StreamingAssets 读取需要后续平台适配；`DeveloperD
 - 2026-10-16 交付时连接的 Unity 正运行旧阶段 2 的 Play Mode，棋盘有用户尚未保存的内容。为避免丢失该内存草稿，未退出 Play 或触发重载；没有把旧界面截图当作新版视觉验证。
 - 用户新增的字体资源、TitleScene 与 LevelEditor 场景改动原样保留；未提交或推送此次代码。
 
-使用与手动验收见 [LevelEditorQuickStart.md](/Users/aoi/UnityProjects/taptap2026-emergence/Docs/LevelEditorQuickStart.md)。用户已确认保存可用并授权进入阶段 4；重新加载及其他手动验收仍以该说明中的清单补验。
+使用与手动验收见 [LevelEditorQuickStart.md](LevelEditorQuickStart.md)。用户已确认保存可用并授权进入阶段 4；重新加载及其他手动验收仍以该说明中的清单补验。
 
 
 ## 阶段 4：共用玩法逻辑
@@ -190,7 +210,7 @@ WebGL／Android 的 StreamingAssets 读取需要后续平台适配；`DeveloperD
 
 ### Unity 中如何使用与下一阶段入口
 
-本阶段没有可玩的场景 UI。在 Unity 等待编译后执行 **Tools → Levels → Run Play Checks** 即可复核规则；详细代码用法和手动确认项见 [LevelPlayQuickStart.md](/Users/aoi/UnityProjects/taptap2026-emergence/Docs/LevelPlayQuickStart.md)。
+本阶段没有可玩的场景 UI。在 Unity 等待编译后执行 **Tools → Levels → Run Play Checks** 即可复核规则；详细代码用法和手动确认项见 [LevelPlayQuickStart.md](LevelPlayQuickStart.md)。
 
 阶段 5 应继续使用同一个 LevelPlaySession，在会话内集中协调快照、撤销、重置与初始副本，新增受控恢复入口；不要让 UI 修改 State 副本。只为成功迭代保存迭代前快照，最近 100 份；失败超限、移动、分身、回收均不新增记录。Z 恢复来源、玩家、轮数并丢弃此后的变化；R 从初始关卡恢复并清空历史。恢复后清除选择模式、重新检查目标，清除失败状态。
 
@@ -232,7 +252,7 @@ WebGL／Android 的 StreamingAssets 读取需要后续平台适配；`DeveloperD
 
 ### Unity 操作与下一阶段交接
 
-见 [LevelPlayQuickStart.md](/Users/aoi/UnityProjects/taptap2026-emergence/Docs/LevelPlayQuickStart.md)：先执行 History Checks，再执行 Create Gameplay Scene，默认读取用户的 002；其 cloneLimit=0，分身测试须另存一张有分身额度的草稿，勿覆盖原关。
+见 [LevelPlayQuickStart.md](LevelPlayQuickStart.md)：先执行 History Checks，再执行 Create Gameplay Scene，默认读取用户的 002；其 cloneLimit=0，分身测试须另存一张有分身额度的草稿，勿覆盖原关。
 
 阶段 6 使用同一个 LevelPlayScreen／LevelPlaySession，设置 loadOnStart=false，通过 Initialize 传入校验后的草稿副本。编辑草稿、试玩初始数据、运行状态和历史保持隔离；关闭试玩销毁其 Screen／生成对象，恢复原编辑草稿及视图，不能从磁盘重载替代。需要额外协调编辑界面的键盘焦点／EventSystem、绘制锁定、重复进出清理；本阶段未新增编辑器试玩按钮，也未制作带通关操作序列的正式测试谜题。
 
@@ -279,7 +299,7 @@ WebGL／Android 的 StreamingAssets 读取需要后续平台适配；`DeveloperD
 
 ### 后续交接
 
-先在既有 LevelEditor 场景 Play，加载 stage6_probe 或编辑未保存草稿，点击“试玩当前草稿”，完成后“结束试玩 · 返回编辑”，确认草稿和场景均保持。已有 Gameplay 场景无需重建，运行时自动使用同一 Organic 视图。入口与手动清单见 [LevelPlayQuickStart.md](/Users/aoi/UnityProjects/taptap2026-emergence/Docs/LevelPlayQuickStart.md)。
+先在既有 LevelEditor 场景 Play，加载 stage6_probe 或编辑未保存草稿，点击“试玩当前草稿”，完成后“结束试玩 · 返回编辑”，确认草稿和场景均保持。已有 Gameplay 场景无需重建，运行时自动使用同一 Organic 视图。入口与手动清单见 [LevelPlayQuickStart.md](LevelPlayQuickStart.md)。
 
 阶段 7 的标题／人体选关／结算／存档尚未接入，产品选项仍需按 DevelopmentPlan 在该阶段前定案。当前 Organic 为 Demo 表现的一般化实现，GPU 实际编译和与原 Demo 的视觉对照须在 Unity 确认后再标记通过。
 

@@ -1,6 +1,6 @@
 # UI Prefab 编辑与交接
 
-更新：2026-10-21。首版功能骨架已落地，排版与按钮仍可继续调整。
+更新：2026-11-03。按当前代码与资源整理；历史实现与验证记录单列，不视为本轮重新验收。
 
 ## 直接编辑
 
@@ -21,7 +21,7 @@
 
 可以改对象名称及增加装饰，但不要删除已被 CampaignPanelView / GameplayHUDView 引用的对象、清空字段引用或增加第二套点击监听。若重新组织层级，保留引用。普通图为 Image + Sprite；棋盘是 RawImage / Shader 画面，调整 BoardHost 容器，不能通过 Source Image 改细胞规则。
 
-章节局部图目前用线稿占位；可换 ChapterSelectPanel/ChapterArtwork 的 Sprite。Catalog.chapters 中的 artwork 若配置了具体章节图，会优先用于该章；坐标不会在运行时覆盖人体节点的 Prefab 布局。
+章节局部图目前用线稿占位；可换 ChapterSelectPanel/ChapterArtwork 的 Sprite。存在 ChapterScanView 时优先使用扫描画面；没有扫描组件时才使用 Catalog.chapters.artwork。运行时不会用 Catalog 坐标覆盖人体节点的 Prefab 布局。
 
 ## 数据与导入
 
@@ -38,14 +38,6 @@ python3 Docs/Tools/import-ui-database.py Docs/GameData/Database.xlsx
 在 Unity 执行 `Tools → UI → Create Editable UI` 同步 Catalog 并创建缺失 Prefab。**已有 Prefab 不会覆盖**；改 Excel 不必重新生成布局。不使用旧 `Tools → Export Database To JSON`，该菜单属于旧空表框架，不读取本次新源表。
 
 姓名与立绘独立：speakerName 空则隐藏名字，portraitId 空则隐藏立绘，支持“档案摘要”等有名无图文本。立绘 ID player/o/kui 对应 `Assets/Resources/UI/Portraits` 中的 Sprite。剧情和教程首次播放或确认跳过后记为已读，重玩不自动重复，没有“对话回顾”入口；档案仍可在通关章节内回看。
-
-## 已验证与待验
-
-独立 Editor/Player 编译通过；306 项纯逻辑检查通过，其中包含章节全部完成后解锁下一章、稳定 ID 存档回读、末关边界。Unity 内已点击：标题 → 人体总览 → 第一章列表 → 剧情跳过 → 教程跳过 → 001 Gameplay → 规则关闭 → 暂停 → 设置返回 → 返回确认 → 原章节列表。Console 当时无错误/警告。
-
-完整章节通关、胜利后的档案阅读与回看、失败恢复、全部目标画幅、独立包及 WebGL 构建仍需验收。美术布局为首版占位，尚非视觉定稿。未修改关卡 JSON、提交或推送代码。
-
-全量 Unity 资源校验补充：14 个 Prefab、全部立绘引用及 13 个对话组检查通过；18 份 JSON 中 202 缺少通关目标，需策划补齐，其他 17 份通过玩法校验。本次不替策划填写目标。
 
 ## 章节圆形透视（2026-10-21）
 
@@ -66,23 +58,21 @@ python3 Docs/Tools/import-ui-database.py Docs/GameData/Database.xlsx
 
 所有正式界面共用 `Assets/Resources/UI/GlobalSettingsButton.prefab`，运行时固定显示在 UI 顶层；加载、设置及确认窗口期间隐藏。修改这个 Prefab 的 Rect Transform、图片和文字即可统一调整入口。标题原设置按钮、选章旧返回按钮由运行时隐藏，避免重复。章节返回仍用于回到人体总览。
 
-`SettingsPanel.prefab` 中音乐/音效滑块即时生效，关闭时保存；包含返回标题和退出游戏确认。游戏中离开提示“退出本局状态不会保存”。打开设置时玩法输入及棋盘演化被阻挡，对话停止打字和翻页，关闭后恢复。WebGL 隐藏退出游戏。
+`SettingsPanel.prefab` 中音乐/音效滑块即时生效，关闭时保存；包含返回标题和退出游戏确认。游戏内从暂停进入设置，其他正式页面使用全局按钮。游戏中离开提示“退出本局状态不会保存”。打开设置时玩法输入及棋盘演化被阻挡，对话停止打字和翻页，关闭后恢复。WebGL 隐藏退出游戏。
 
 已验证：共用设置入口打开菜单，退出确认取消，返回标题确认后进入标题。编译通过。测试中的 GameManager 单例报错由人为 inactive 造成，保留用户测试状态；未确认退出应用，也未逐页测试全部玩法状态。
 
-## 游戏内按钮与棋盘（2026-10-21）
+## 游戏内按钮与棋盘
 
-编辑 `Assets/Resources/UI/GameplayHUDPanel.prefab`：`UndoButton`、`CloneButton`、`IterateButton` 对应撤销、B 分身、Space 演化。图片已绑定 `Assets/Arts/UI/Game` 中的撤销按钮、分身按钮、分裂按钮；Image → Source Image 可换图，子物体 Caption 编辑名称及快捷键。回收分身暂保留文字按钮，尚无对应命名图片。
+编辑 `GameplayHUDPanel.prefab`：UndoButton、CloneButton、IterateButton 对应 Z、B、Space。图片在 `Assets/Arts/UI/Game`，迭代图名为“迭代按钮.png”。正式回收按钮由运行时隐藏，N 仍可回收；编辑器诊断 HUD 保留按钮。Z 撤销成功迭代、创建和回收，详见文末。
 
-`BoardHost/Board` 的 Organic Level Board View → Goal Icon 已绑定终点图标。棋盘使用静止、轴对齐的方形地砖，浅色地面、深色墙面；普通细胞半径以约 4.2 秒周期轻微变化（±2.5%），分身与玩家不参与此呼吸动画。移动及演化的状态过渡仍保留。目标说明已更新为“抵达蓝色交叉终点”。
-
-编译与 306 项逻辑检查通过；Unity 正式 Gameplay 运行画面已确认新按钮、方形地砖与蓝色叉号显示正常。未改关卡 JSON 和规则。
+BoardHost/Board 的 OrganicLevelBoardView 负责棋盘，不通过替换 Source Image 改规则。正式地砖为静止、轴对齐的浅蓝／灰蓝渐变方形，墙较深；蓝色交叉终点来自 Goal Icon。普通细胞蓝紫，玩家柔橙，分身／细胞核较深；普通细胞约 4.2 秒周期呼吸（±2.5%），保留移动与生灭过渡。
 
 ## 标题新游戏与继续游戏
 
 `TitlePanel.prefab` 的 `NewGameButton` 与 `ContinueButton` 分别绑定 Campaign Panel View 的 Primary、Secondary。两个按钮同时显示；Continue 只在存在可读取进度时可用。首次开始即保存空通关进度，因此未通关也能继续到选关。继续仍记录关卡通关/解锁，不保存本局棋盘状态。
 
-已有进度时，新游戏先弹确认，确认才重置通关、章节档案解锁及对话/教程阅读记录；音量设置保留。未执行用户真实存档重置来测试。Unity 已确认标题双按钮显示，编译通过。
+已有进度时，新游戏先弹确认，确认才重置通关、章节档案解锁及对话/教程阅读记录；音量设置保留。历史验证未执行真实存档重置；该限制不改变代码已包含确认清档的事实。
 
 有效地砖恢复浅蓝到灰蓝的整体静态渐变；墙面保持深色，方形轮廓、间隙和位置固定。渐变不再随时间或玩家移动变化。
 
@@ -91,10 +81,6 @@ python3 Docs/Tools/import-ui-database.py Docs/GameData/Database.xlsx
 BeforeLevel 对话在 Gameplay 场景完成关卡数据初始化、HUD/棋盘构建以及场景淡入后播放，背景为已加载的关卡。等待期间保留加载遮罩并阻止玩法输入；对话关闭后继续关卡。已读跳过规则不变，不清除现有阅读记录。AfterWin 对话流程不变。
 
 Gameplay 场景隐藏 GlobalSettingsButton；左上角暂停菜单继续提供设置。标题、章节和档案界面仍显示全局设置入口。编译通过。
-
-游戏内 `RecycleButton` 已隐藏，保留 Z 整轮撤销。规则说明同步移除手动回收入口提示。撤销不等于单独删除分身，玩法规则和编辑器诊断功能不变。
-
-回收功能保留为键盘入口：N 进入回收模式，点击任意存活分身回收，Esc 取消。屏幕按钮隐藏，底部及规则中提供快捷键提示。初始普通细胞不可回收，Z 仍为整轮撤销。
 
 ## 音乐与音效
 
@@ -120,6 +106,8 @@ N 按关卡配置的 cloneLimit 判断：上限等于 1 且有存活分身时直
 
 Z 按倒序撤销成功的演化、创建分身、回收分身，最多保留 100 次操作。撤销恢复操作前的完整棋盘、玩家位置、迭代数与分身名额；移动不单独记步。进入/取消选择、失败操作不占历史。撤销可在选择模式使用，使用后回到移动模式。此前文档的“只撤销演化”规则由本条替代。新增单分身直接回收、混合撤销、无效目标、选择中撤销等回归检查。
 
-## 本次提交状态
+## 验证范围
 
-收录已调整的 UI Prefab、章节圆形透视、标题双入口、共用设置、关卡后加载对话、静态渐变方砖、蓝色终点、图标按钮、音频接入，以及 N 回收/Z 分身撤销。演化按钮美术现命名为“迭代按钮.png”。用户已为 202.json 补充玩家到达目标，先前“202 无目标”的记录已失效。场景、美术重命名与打包产品设置一同保存；不包含本机 Finder 缓存。
+2026-11-03 文档核对：315 项逻辑检查及相关 Editor／Player 独立编译通过。当前正式目录有 18 个关卡，202 已补目标，旧“202 无目标”的记录仅描述当时状态。该检查不代表全部正式关卡已逐关解出。
+
+历史人工验证包括标题、章节列表、剧情跳过、001 Gameplay、规则、暂停／设置、返回确认、扫描图层和部分音频状态；当时细节见 [ImplementationStatus](ImplementationStatus.md)。本轮没有重新运行 Unity／构建包。完整通关、章末档案、多画幅、目标平台 Shader／存储及最终混音仍应按发布目标复核。
